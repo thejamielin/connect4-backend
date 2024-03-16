@@ -5,12 +5,17 @@ const app = express();
 // TODO: replace temporary testing code here
 app.use(express.json());
 
+interface AccountRegisterRequest {
+  username: string;
+  password: string;
+  email: string;
+}
 app.post('/account/register', (req, res) => {
-  // TODO: use request body validation checker
   // { username: string, password: string, email: string } -> { token?: string }
 
+  // TODO: use request body validation checker
+  const {username, password, email} = req.body as AccountRegisterRequest;
   // reject registration if user already exists
-  const username = req.body['username'];
   if (USERS[username]) {
     res.send({});
     return;
@@ -18,7 +23,7 @@ app.post('/account/register', (req, res) => {
   // create user and return sessionID
   USERS[username] = {
     username: username,
-    email: req.body['email'],
+    email: email,
     following: [],
     stats: {},
     admin: false
