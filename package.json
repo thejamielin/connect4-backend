@@ -1,0 +1,16 @@
+{
+  "type": "module",
+  "name": "connect4-backend",
+  "version": "1.0.0",
+  "description": "Final project backend for Web Development course at Northeastern University",
+  "main": "App.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node App.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}
