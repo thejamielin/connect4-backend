@@ -20,5 +20,14 @@ export const USERS: Record<string, PrivateUser> = {
   }
 };
 
+let x = 0;
+// creates a session and returns the newly generated session id
+export function createSession(username: string): string {
+  x += 1;
+  const sessionID = '' + x;
+  SESSIONS[sessionID] = username;
+  return sessionID;
+}
+
 // TODO: add game states and types
 // map from gameId -> gameResult

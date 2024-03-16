@@ -1,4 +1,4 @@
-
+// Backend data
 export interface PublicUser {
   username: string;
   following: string[];
