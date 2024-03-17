@@ -1,5 +1,5 @@
 import express from 'express';
-import { USERS, createSession } from './data';
+import { USERS, createNewUser, createSession } from './data';
 const app = express();
 
 // TODO: replace temporary testing code here
@@ -15,20 +15,11 @@ app.post('/account/register', (req, res) => {
 
   // TODO: use request body validation checker
   const {username, password, email} = req.body as AccountRegisterRequest;
-  // reject registration if user already exists
-  if (USERS[username]) {
-    res.send({});
+  // send failed response if user creation fails due to already existing
+  if (!createNewUser(username, password, email)) {
+    res.status(400).send({});
     return;
   }
-  // create user and return sessionID
-  USERS[username] = {
-    username: username,
-    email: email,
-    following: [],
-    stats: {},
-    admin: false
-  };
-  // TODO: store password...
   const sessionID = createSession(username);
   res.send({token: sessionID});
 });

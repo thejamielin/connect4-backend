@@ -29,5 +29,23 @@ export function createSession(username: string): string {
   return sessionID;
 }
 
+// creates a new user, returns true on success and false if the user already exists
+export function createNewUser(username: string, password: string, email: string): boolean {
+  // fails if the user already exists
+  if (USERS[username]) {
+    return false;
+  }
+
+  // TODO: store password...
+  USERS[username] = {
+    username: username,
+    email: email,
+    following: [],
+    stats: {},
+    admin: false
+  };
+  return true;
+}
+
 // TODO: add game states and types
 // map from gameId -> gameResult
