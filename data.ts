@@ -1,4 +1,4 @@
-import { PrivateUser } from "./types";
+import { User } from "./types";
 
 // represents active sessions
 // map from token -> username
@@ -8,9 +8,10 @@ export const SESSIONS: Record<string, string> = {
 
 // represents all registered users
 // map from username -> userdata
-export const USERS: Record<string, PrivateUser> = {
+export const USERS: Record<string, User> = {
   theor: {
     username: "theor",
+    password: "password",
     email: "loser@gmail.com",
     admin: true,
     following: ["theor"],
@@ -27,6 +28,24 @@ export function createSession(username: string): string {
   return sessionID;
 }
 
+export function destroySession(token: string): void {
+  delete SESSIONS[token];
+}
+
+export function doesSessionExist(token: string): boolean {
+  return !!SESSIONS[token];
+}
+
+// determines if the given username already exists in the database
+export function doesUserExist(username: string): boolean {
+  return !!USERS[username];
+}
+
+// determines if the given password is correctly associated with the given username
+export function isCorrectPassword(username: string, password: string): boolean {
+  return doesUserExist(username) && USERS[username].password === password;
+}
+
 // creates a new user, returns true on success and false if the user already exists
 export function createNewUser(
   username: string,
@@ -34,13 +53,13 @@ export function createNewUser(
   email: string
 ): boolean {
   // fails if the user already exists
-  if (USERS[username]) {
+  if (doesUserExist(username)) {
     return false;
   }
 
-  // TODO: store password...
   USERS[username] = {
     username: username,
+    password: password,
     email: email,
     following: [],
     stats: {},

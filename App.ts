@@ -1,5 +1,13 @@
 import express from "express";
-import { USERS, createNewUser, createSession } from "./data";
+import {
+  USERS,
+  createNewUser,
+  createSession,
+  destroySession,
+  doesSessionExist,
+  doesUserExist,
+  isCorrectPassword,
+} from "./data";
 const app = express();
 
 // TODO: replace temporary testing code here
@@ -9,6 +17,11 @@ interface AccountRegisterRequest {
   username: string;
   password: string;
   email: string;
+}
+
+interface AccountLoginRequest {
+  username: string;
+  password: string;
 }
 app.post("/account/register", (req, res) => {
   // { username: string, password: string, email: string } -> { token?: string }
@@ -22,6 +35,34 @@ app.post("/account/register", (req, res) => {
   }
   const sessionID = createSession(username);
   res.send({ token: sessionID });
+});
+
+app.post("/account/login", (req, res) => {
+  // { username: string, password: string } -> { token?: string }
+  const { username, password } = req.body as AccountLoginRequest;
+  if (isCorrectPassword(username, password)) {
+    const sessionID = createSession(username);
+    res.send({ token: sessionID });
+  } else {
+    res.status(400).send({});
+  }
+});
+
+app.post("/account/logout", (req, res) => {
+  // { token: string } -> {}
+  const { token } = req.body;
+  destroySession(token);
+  res.send({});
+});
+
+app.get("/account/checkSession", (req, res) => {
+  // { token: string } -> {}
+  const { token } = req.body;
+  if (doesSessionExist(token)) {
+    res.status(200).send({});
+  } else {
+    res.status(400).send({});
+  }
 });
 
 app.get("/", (req, res) => {

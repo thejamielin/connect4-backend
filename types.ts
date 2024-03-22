@@ -1,13 +1,11 @@
 // Backend data
-export interface PublicUser {
+export interface User {
+  email: string;
+  admin: boolean;
   username: string;
   following: string[];
   stats: UserStats;
-}
-
-export interface PrivateUser extends PublicUser {
-  email: string;
-  admin: boolean;
+  password: string;
 }
 
 export interface UserStats {
