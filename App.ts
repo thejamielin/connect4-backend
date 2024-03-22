@@ -6,7 +6,12 @@ import {
   destroySession,
   doesSessionExist,
   doesUserExist,
+  getSessionUsername,
+  getAllUserInfo,
   isCorrectPassword,
+  getPublicUserInfo,
+  getPrivateUserInfo,
+  setUserInfo,
 } from "./data";
 const app = express();
 
@@ -23,6 +28,11 @@ interface AccountLoginRequest {
   username: string;
   password: string;
 }
+
+interface AuthRequest {
+  token: string;
+}
+
 app.post("/account/register", (req, res) => {
   // { username: string, password: string, email: string } -> { token?: string }
 
@@ -64,6 +74,47 @@ app.get("/account/checkSession", (req, res) => {
     res.status(400).send({});
   }
 });
+
+function isLoggedIn(req : {body: {token? : String}}) {
+  const { token } = req.body
+  return token === undefined
+}
+
+// TODO: Rename this lol
+function isChill(token: string, username: string){
+  return doesSessionExist(token) && getSessionUsername(token) === username
+}
+
+app.get("/user/:username", (req, res) => {
+  const { token } = req.body
+  const { username } = req.params
+  if(!doesUserExist(username)){
+    res.status(404).send("User does not exist!")
+    return
+  }
+  if(isChill(token, username)){
+    res.status(200).send(getPrivateUserInfo(username))
+  }
+  else {
+    res.status(200).send(getPublicUserInfo(username))
+  }
+})
+
+app.put("/user/:username", (req, res) => {
+  const { token, editedFields: {following, email} } = req.body
+  const { username } = req.params
+  if(!doesUserExist(username)){
+    res.status(404).send("User does not exist!")
+    return
+  }
+  if(isChill(token, username)){
+    setUserInfo(username, { following, email })
+    res.status(200).send(getPrivateUserInfo(username))
+  }
+  else {
+    res.status(401).send("Cannot edit other user's data!")
+  }
+})
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");

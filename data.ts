@@ -1,3 +1,4 @@
+import { error } from "console";
 import { User } from "./types";
 
 // represents active sessions
@@ -66,6 +67,45 @@ export function createNewUser(
     admin: false,
   };
   return true;
+}
+
+export function getSessionUsername(token: string) {
+  if(doesSessionExist(token)){
+    return SESSIONS[token]
+  }
+  throw Error("Session does not exist!")
+}
+
+export function getAllUserInfo(username: string) {
+  if(doesUserExist(username)){
+    return USERS[username]
+  }
+  throw Error("User does not exist!")
+}
+
+export function getPublicUserInfo(username: string) {
+  const userInfo = getAllUserInfo(username)
+  return {
+    username: userInfo.username,
+    admin: userInfo.admin,
+    following: userInfo.following,
+    stats: userInfo.stats,
+  }
+}
+
+export function getPrivateUserInfo(username: string) {
+  const userInfo = getAllUserInfo(username)
+  return {
+    username: userInfo.username,
+    email: userInfo.email,
+    admin: userInfo.admin,
+    following: userInfo.following,
+    stats: userInfo.stats,
+  }
+}
+
+export function setUserInfo(username : string, newData: Partial<User>){
+  USERS[username] = { ...(USERS[username] || []), ...newData }
 }
 
 // TODO: add game states and types
