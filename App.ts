@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  USERS,
   createNewUser,
   createSession,
   destroySession,
@@ -12,6 +11,9 @@ import {
   getPublicUserInfo,
   getPrivateUserInfo,
   setUserInfo,
+  getGameResults,
+  searchGameResults,
+  GameSearchParameters,
 } from "./data";
 const app = express();
 
@@ -49,6 +51,7 @@ app.post("/account/register", (req, res) => {
 
 app.post("/account/login", (req, res) => {
   // { username: string, password: string } -> { token?: string }
+  // TODO: validate body
   const { username, password } = req.body as AccountLoginRequest;
   if (isCorrectPassword(username, password)) {
     const sessionID = createSession(username);
@@ -60,6 +63,7 @@ app.post("/account/login", (req, res) => {
 
 app.post("/account/logout", (req, res) => {
   // { token: string } -> {}
+  // TODO: validate body
   const { token } = req.body;
   destroySession(token);
   res.send({});
@@ -67,6 +71,7 @@ app.post("/account/logout", (req, res) => {
 
 app.get("/account/checkSession", (req, res) => {
   // { token: string } -> {}
+  // TODO: validate body
   const { token } = req.body;
   if (doesSessionExist(token)) {
     res.status(200).send({});
@@ -86,6 +91,7 @@ function isChill(token: string, username: string){
 }
 
 app.get("/user/:username", (req, res) => {
+  // TODO: validate body
   const { token } = req.body
   const { username } = req.params
   if(!doesUserExist(username)){
@@ -101,6 +107,7 @@ app.get("/user/:username", (req, res) => {
 })
 
 app.put("/user/:username", (req, res) => {
+  // TODO: validate body
   const { token, editedFields: {following, email} } = req.body
   const { username } = req.params
   if(!doesUserExist(username)){
@@ -108,6 +115,7 @@ app.put("/user/:username", (req, res) => {
     return
   }
   if(isChill(token, username)){
+    // TODO: validate edited fields! e.g. followers must be valid users
     setUserInfo(username, { following, email })
     res.status(200).send(getPrivateUserInfo(username))
   }
@@ -115,6 +123,27 @@ app.put("/user/:username", (req, res) => {
     res.status(401).send("Cannot edit other user's data!")
   }
 })
+
+app.get("/games", (req, res) => {
+  // { gameIDs: string[] } => GameResult[]
+  // TODO: validate body
+  const { gameIDs } = req.body;
+  const gameResults = getGameResults(gameIDs);
+  if (!gameResults) {
+    res.status(404).send('Invalid game IDs');
+    return;
+  }
+  res.status(200).send(gameResults);
+});
+
+app.get("/games/search", (req, res) => {
+  // TODO: validate body
+  const { searchParams }: { searchParams: GameSearchParameters } = req.body;
+  if (searchParams.count < 0 || searchParams.count > 100) {
+    res.status(400).send("Pwease use a vawid numba of games >~<")
+  }
+  res.status(200).send(searchGameResults(searchParams));
+});
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
