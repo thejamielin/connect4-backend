@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import {
   createNewUser,
   createSession,
@@ -6,7 +7,6 @@ import {
   doesSessionExist,
   doesUserExist,
   getSessionUsername,
-  getAllUserInfo,
   isCorrectPassword,
   getPublicUserInfo,
   getPrivateUserInfo,
@@ -16,6 +16,7 @@ import {
   GameSearchParameters,
 } from "./data";
 const app = express();
+app.use(cors())
 
 // TODO: replace temporary testing code here
 app.use(express.json());
@@ -136,9 +137,9 @@ app.get("/games", (req, res) => {
   res.status(200).send(gameResults);
 });
 
-app.get("/games/search", (req, res) => {
+app.post("/games/search", (req, res) => {
   // TODO: validate body
-  const { searchParams }: { searchParams: GameSearchParameters } = req.body;
+  const searchParams: GameSearchParameters = req.body;
   if (searchParams.count < 0 || searchParams.count > 100) {
     res.status(400).send("Pwease use a vawid numba of games >~<")
   }
