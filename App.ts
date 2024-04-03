@@ -70,14 +70,18 @@ app.post("/account/logout", (req, res) => {
   res.send({});
 });
 
-app.get("/account/checkSession", (req, res) => {
+app.post("/account/checkSession", (req, res) => {
   // { token: string } -> {}
   // TODO: validate body
   const { token } = req.body;
   if (doesSessionExist(token)) {
-    res.status(200).send({});
+    res.status(200).send({
+      isValidSession: true
+    });
   } else {
-    res.status(400).send({});
+    res.status(200).send({
+      isValidSession: false
+    });
   }
 });
 
@@ -91,7 +95,7 @@ function isChill(token: string, username: string){
   return doesSessionExist(token) && getSessionUsername(token) === username
 }
 
-app.get("/user/:username", (req, res) => {
+app.post("/user/:username", (req, res) => {
   // TODO: validate body
   const { token } = req.body
   const { username } = req.params
