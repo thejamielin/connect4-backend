@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv"
 import {
   createNewUser,
   createSession,
@@ -15,6 +16,11 @@ import {
   searchGameResults,
   GameSearchParameters,
 } from "./data";
+import axios from "axios";
+dotenv.config()
+
+const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY
+const PIXBAY_URL = 'https://pixabay.com/api/'
 const app = express();
 app.use(cors())
 
@@ -149,6 +155,13 @@ app.post("/games/search", (req, res) => {
   }
   res.status(200).send(searchGameResults(searchParams));
 });
+
+app.get("/pictures/search", (req, res) => {
+  const { q } = req.query
+  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, q: q}}).then((pixbayRes) => {
+    res.status(200).send(pixbayRes.data)
+  })
+})
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
