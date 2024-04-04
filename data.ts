@@ -14,7 +14,7 @@ const USERS: Record<string, User> = {
     username: "theor",
     password: "password",
     email: "loser@gmail.com",
-    admin: true,
+    beginner: true,
     following: ["jarm"],
     stats: {},
   },
@@ -22,7 +22,7 @@ const USERS: Record<string, User> = {
     username: 'jarm',
     password: 'secure',
     email: 'winner@gmail.com',
-    admin: true,
+    beginner: true,
     following: [],
     stats: {}
   }
@@ -153,7 +153,7 @@ export function createNewUser(
     email: email,
     following: [],
     stats: {},
-    admin: false,
+    beginner: false,
   };
   return true;
 }
@@ -176,7 +176,7 @@ export function getPublicUserInfo(username: string) {
   const userInfo = getAllUserInfo(username)
   return {
     username: userInfo.username,
-    admin: userInfo.admin,
+    beginner: userInfo.beginner,
     following: userInfo.following,
     stats: userInfo.stats,
   }
@@ -187,7 +187,7 @@ export function getPrivateUserInfo(username: string) {
   return {
     username: userInfo.username,
     email: userInfo.email,
-    admin: userInfo.admin,
+    beginner: userInfo.beginner,
     following: userInfo.following,
     stats: userInfo.stats,
   }

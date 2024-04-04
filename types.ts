@@ -1,7 +1,7 @@
 // Backend data
 export interface User {
   email: string;
-  admin: boolean;
+  beginner: boolean;
   username: string;
   following: string[];
   stats: UserStats;
