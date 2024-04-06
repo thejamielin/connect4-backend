@@ -175,7 +175,7 @@ app.put("/pictures/like/:id", (req, res) => {
   // TODO: validate body
   const { token } = req.body
   const { id } = req.params
-  if(!doesSessionExist(token)){
+  if(!sessionsDao.doesSessionExist(token)){
     res.status(404).send("Invalid session!")
     return
   }

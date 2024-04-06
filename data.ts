@@ -1,5 +1,4 @@
 import * as sessionsDao from "./Sessions/dao";
-import { User } from "./types";
 import { error } from "console";
 import { ImageEntry, User } from "./types";
 
