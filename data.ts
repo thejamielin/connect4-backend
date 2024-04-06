@@ -94,7 +94,7 @@ export function formatPixbay(data : any) : ApiEntry[] {
   var apiResult = data as ApiResult
   for(var idx in apiResult.hits) {
     var id = String(apiResult.hits[idx].id)
-    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id].likes
+    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id]?.likes || []
   }
   return apiResult.hits
 }
@@ -221,8 +221,10 @@ export function setUserInfo(username: string, newData: Partial<User>) {
 }
 
 export function setImageLikes(id : string, username : string){
-  IMAGE_ENTRIES[id].likes = [ ...(IMAGE_ENTRIES[id].likes), username]
-  console.log(IMAGE_ENTRIES)
+  if(!IMAGE_ENTRIES[id]){
+    IMAGE_ENTRIES[id] = {id: id, likes: []}
+  }
+  IMAGE_ENTRIES[id].likes = [ ...(IMAGE_ENTRIES[id]?.likes || []), username]
 }
 
 // TODO: add game states and types
