@@ -1,16 +1,14 @@
 import express from "express";
 import mongoose from "mongoose";
+import SessionRoutes from "./Sessions/routes";
 import UserRoutes from "./Users/routes";
+import * as sessionsDao from "./Sessions/dao";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
   createNewUser,
-  createSession,
-  destroySession,
-  doesSessionExist,
   doesUserExist,
   getSessionUsername,
-  isCorrectPassword,
   getPublicUserInfo,
   getPrivateUserInfo,
   setUserInfo,
@@ -45,6 +43,7 @@ interface AuthRequest {
   token: string;
 }
 
+SessionRoutes(app);
 UserRoutes(app);
 
 app.post("/account/register", (req, res) => {
@@ -57,27 +56,15 @@ app.post("/account/register", (req, res) => {
     res.status(400).send({});
     return;
   }
-  const sessionID = createSession(username);
+  const sessionID = sessionsDao.createSession(username);
   res.send({ token: sessionID });
-});
-
-app.post("/account/login", (req, res) => {
-  // { username: string, password: string } -> { token?: string }
-  // TODO: validate body
-  const { username, password } = req.body as AccountLoginRequest;
-  if (isCorrectPassword(username, password)) {
-    const sessionID = createSession(username);
-    res.send({ token: sessionID });
-  } else {
-    res.status(400).send({});
-  }
 });
 
 app.post("/account/logout", (req, res) => {
   // { token: string } -> {}
   // TODO: validate body
   const { token } = req.body;
-  destroySession(token);
+  sessionsDao.destroySession(token);
   res.send({});
 });
 
@@ -85,7 +72,7 @@ app.post("/account/checkSession", (req, res) => {
   // { token: string } -> {}
   // TODO: validate body
   const { token } = req.body;
-  if (doesSessionExist(token)) {
+  if (sessionsDao.doesSessionExist(token)) {
     res.status(200).send({
       isValidSession: true,
     });
@@ -103,7 +90,10 @@ function isLoggedIn(req: { body: { token?: String } }) {
 
 // TODO: Rename this lol
 function isChill(token: string, username: string) {
-  return doesSessionExist(token) && getSessionUsername(token) === username;
+  return (
+    sessionsDao.doesSessionExist(token) &&
+    getSessionUsername(token) === username
+  );
 }
 
 // GET function, used post because we didn't want to reformat the body (TODO: change this?)

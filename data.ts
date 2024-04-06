@@ -1,4 +1,4 @@
-import { error } from "console";
+import * as sessionsDao from "./Sessions/dao";
 import { User } from "./types";
 
 // represents active sessions
@@ -19,13 +19,13 @@ const USERS: Record<string, User> = {
     stats: {},
   },
   jarm: {
-    username: 'jarm',
-    password: 'secure',
-    email: 'winner@gmail.com',
+    username: "jarm",
+    password: "secure",
+    email: "winner@gmail.com",
     beginner: true,
     following: [],
-    stats: {}
-  }
+    stats: {},
+  },
 };
 
 interface GameResult {
@@ -48,26 +48,30 @@ const GAME_HISTORY: Record<string, GameResult> = {
     player1: "theor",
     player2: "jarm",
     winner: "jarm",
-    date: new Date('2024-3-22')
-  }, 
+    date: new Date("2024-3-22"),
+  },
   game2: {
     id: "game2",
     player1: "theor",
     player2: "theor",
-    date: new Date('2024-3-25')
-  }
+    date: new Date("2024-3-25"),
+  },
 };
 
 export interface GameSearchParameters {
   count: number;
-  sort?: 'newest' | 'oldest';
+  sort?: "newest" | "oldest";
   filter?: {
     players?: string[];
-  }
+  };
 }
 
 // returns n game results based on filter and sort parameters
-export function searchGameResults({ count, sort, filter }: GameSearchParameters): GameResult[] {
+export function searchGameResults({
+  count,
+  sort,
+  filter,
+}: GameSearchParameters): GameResult[] {
   function predicate(gameResult: GameResult): boolean {
     if (!filter?.players) {
       return true;
@@ -79,17 +83,20 @@ export function searchGameResults({ count, sort, filter }: GameSearchParameters)
     }
     return true;
   }
-  function newestComparator(gameResult1: GameResult, gameResult2: GameResult): number {
-    return gameResult2.date.getTime() - gameResult1.date.getTime();
-  }
-  const oldestComparator = (
+  function newestComparator(
     gameResult1: GameResult,
     gameResult2: GameResult
-  ) => newestComparator(gameResult2, gameResult1);
-  const comparator = sort ? {
-    newest: newestComparator,
-    oldest: oldestComparator
-  }[sort] : () => 0;
+  ): number {
+    return gameResult2.date.getTime() - gameResult1.date.getTime();
+  }
+  const oldestComparator = (gameResult1: GameResult, gameResult2: GameResult) =>
+    newestComparator(gameResult2, gameResult1);
+  const comparator = sort
+    ? {
+        newest: newestComparator,
+        oldest: oldestComparator,
+      }[sort]
+    : () => 0;
 
   return Object.values(GAME_HISTORY)
     .filter(predicate)
@@ -107,23 +114,6 @@ export function getGameResults(gameIDs: string[]): GameResult[] | undefined {
     games.push(GAME_HISTORY[gameID]);
   }
   return games;
-}
-
-let x = 0;
-// creates a session and returns the newly generated session id
-export function createSession(username: string): string {
-  x += 1;
-  const sessionID = "" + x;
-  SESSIONS[sessionID] = username;
-  return sessionID;
-}
-
-export function destroySession(token: string): void {
-  delete SESSIONS[token];
-}
-
-export function doesSessionExist(token: string): boolean {
-  return !!SESSIONS[token];
 }
 
 // determines if the given username already exists in the database
@@ -159,42 +149,42 @@ export function createNewUser(
 }
 
 export function getSessionUsername(token: string) {
-  if(doesSessionExist(token)){
-    return SESSIONS[token]
+  if (sessionsDao.doesSessionExist(token)) {
+    return SESSIONS[token];
   }
-  throw Error("Session does not exist!")
+  throw Error("Session does not exist!");
 }
 
 export function getAllUserInfo(username: string) {
-  if(doesUserExist(username)){
-    return USERS[username]
+  if (doesUserExist(username)) {
+    return USERS[username];
   }
-  throw Error("User does not exist!")
+  throw Error("User does not exist!");
 }
 
 export function getPublicUserInfo(username: string) {
-  const userInfo = getAllUserInfo(username)
+  const userInfo = getAllUserInfo(username);
   return {
     username: userInfo.username,
     beginner: userInfo.beginner,
     following: userInfo.following,
     stats: userInfo.stats,
-  }
+  };
 }
 
 export function getPrivateUserInfo(username: string) {
-  const userInfo = getAllUserInfo(username)
+  const userInfo = getAllUserInfo(username);
   return {
     username: userInfo.username,
     email: userInfo.email,
     beginner: userInfo.beginner,
     following: userInfo.following,
     stats: userInfo.stats,
-  }
+  };
 }
 
-export function setUserInfo(username : string, newData: Partial<User>){
-  USERS[username] = { ...(USERS[username] || []), ...newData }
+export function setUserInfo(username: string, newData: Partial<User>) {
+  USERS[username] = { ...(USERS[username] || []), ...newData };
 }
 
 // TODO: add game states and types
