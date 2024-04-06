@@ -115,24 +115,19 @@ app.post("/user/:username", (req, res) => {
   }
 });
 
-app.put("/user/:username", (req, res) => {
+app.put("/user", (req, res) => {
   // TODO: validate body
   const {
     token,
     editedFields: { following, email, pfp },
   } = req.body;
-  const { username } = req.params;
-  if (!doesUserExist(username)) {
-    res.status(404).send("User does not exist!");
-    return;
+  if(!sessionsDao.doesSessionExist(token)){
+    res.status(404).send("Invalid Session!");
   }
-  if (isChill(token, username)) {
-    // TODO: validate edited fields! e.g. followers must be valid users
-    setUserInfo(username, { following, email, pfp });
-    res.status(200).send(getPrivateUserInfo(username));
-  } else {
-    res.status(401).send("Cannot edit other user's data!");
-  }
+  const username = getSessionUsername(token)
+  // TODO: validate edited fields! e.g. followers must be valid users
+  setUserInfo(username, { following, email, pfp });
+  res.status(200).send(getPrivateUserInfo(username));
 });
 
 app.get("/games", (req, res) => {
