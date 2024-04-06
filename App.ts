@@ -163,6 +163,13 @@ app.get("/pictures/search", (req, res) => {
   })
 })
 
+app.get("/pictures/id", (req, res) => {
+  const { id } = req.query
+  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, id: id}}).then((pixbayRes) => {
+    res.status(200).send(pixbayRes.data)
+  })
+})
+
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
 });
