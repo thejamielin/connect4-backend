@@ -17,7 +17,13 @@ export default function SessionRoutes(app: any) {
       res.status(400).send({});
     }
   };
-  const logout = async (req: any, res: any) => {};
+  const logout = async (req: any, res: any) => {
+    // { token: string } -> {}
+    // TODO: validate body
+    const { token } = req.body;
+    dao.destroySession(token);
+    res.send({});
+  };
   app.post("/account/login", login);
   app.post("/account/logout", logout);
 }
