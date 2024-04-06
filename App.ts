@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import UserRoutes from "./Users/routes";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
@@ -43,6 +44,8 @@ interface AccountLoginRequest {
 interface AuthRequest {
   token: string;
 }
+
+UserRoutes(app);
 
 app.post("/account/register", (req, res) => {
   // { username: string, password: string, email: string } -> { token?: string }
@@ -103,6 +106,7 @@ function isChill(token: string, username: string) {
   return doesSessionExist(token) && getSessionUsername(token) === username;
 }
 
+// GET function, used post because we didn't want to reformat the body (TODO: change this?)
 app.post("/user/:username", (req, res) => {
   // TODO: validate body
   const { token } = req.body;
