@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     beginner: { type: Boolean, required: true },
     following: { type: [String], required: true },
     stats: { type: Object, required: true },
-    img_id: { type: String },
+    pfp: { type: String },
   },
   { collection: "users" }
 );
