@@ -9,10 +9,12 @@ export function createSession(username: string): string {
   sessionModel.create(newSession);
   return newSession.token;
 }
-export function destroySession(token: string): void {
-  sessionModel.deleteOne({ token: token });
+export async function destroySession(token: string) {
+  await sessionModel.deleteOne({ token: token })
 }
 
-export function doesSessionExist(token: string): boolean {
-  return !!sessionModel.findOne({ token: token });
+export async function doesSessionExist(token: string) : Promise<boolean> {
+  return await sessionModel.findOne({ token: token }).then((session) => {
+    return (session !== null)
+  })
 }

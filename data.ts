@@ -181,8 +181,8 @@ export function createNewUser(
   return true;
 }
 
-export function getSessionUsername(token: string) {
-  if (sessionsDao.doesSessionExist(token)) {
+export async function getSessionUsername(token: string) {
+  if (await sessionsDao.doesSessionExist(token)) {
     return SESSIONS[token];
   }
   throw Error("Session does not exist!");

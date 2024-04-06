@@ -64,19 +64,12 @@ app.post("/account/register", (req, res) => {
   res.send({ token: sessionID });
 });
 
-app.post("/account/logout", (req, res) => {
+app.post("/account/checkSession", async (req, res) => {
   // { token: string } -> {}
   // TODO: validate body
   const { token } = req.body;
-  sessionsDao.destroySession(token);
-  res.send({});
-});
-
-app.post("/account/checkSession", (req, res) => {
-  // { token: string } -> {}
-  // TODO: validate body
-  const { token } = req.body;
-  if (sessionsDao.doesSessionExist(token)) {
+  const doesExist = await sessionsDao.doesSessionExist(token)
+  if (doesExist) {
     res.status(200).send({
       isValidSession: true,
     });
@@ -93,15 +86,15 @@ function isLoggedIn(req: { body: { token?: String } }) {
 }
 
 // TODO: Rename this lol
-function isChill(token: string, username: string) {
+async function isChill(token: string, username: string) {
   return (
-    sessionsDao.doesSessionExist(token) &&
-    getSessionUsername(token) === username
+    await sessionsDao.doesSessionExist(token) &&
+    await getSessionUsername(token) === username
   );
 }
 
 // GET function, used post because we didn't want to reformat the body (TODO: change this?)
-app.post("/user/:username", (req, res) => {
+app.post("/user/:username", async (req, res) => {
   // TODO: validate body
   const { token } = req.body;
   const { username } = req.params;
@@ -109,14 +102,14 @@ app.post("/user/:username", (req, res) => {
     res.status(404).send("User does not exist!");
     return;
   }
-  if (isChill(token, username)) {
+  if (await isChill(token, username)) {
     res.status(200).send(getPrivateUserInfo(username));
   } else {
     res.status(200).send(getPublicUserInfo(username));
   }
 });
 
-app.put("/user", (req, res) => {
+app.put("/user", async (req, res) => {
   // TODO: validate body
   const {
     token,
@@ -128,7 +121,7 @@ app.put("/user", (req, res) => {
   if(!sessionsDao.doesSessionExist(token)){
     res.status(404).send("Invalid Session!");
   }
-  const username = getSessionUsername(token)
+  const username = await getSessionUsername(token)
   // TODO: validate edited fields! e.g. followers must be valid users
   setUserInfo(username, editedFields);
   res.status(200).send(getPrivateUserInfo(username));
@@ -170,7 +163,7 @@ app.get("/pictures/id", (req, res) => {
   }).catch(() => {res.status(404).send("Image not found!")})
 })
 
-app.put("/pictures/like/:id", (req, res) => {
+app.put("/pictures/like/:id", async (req, res) => {
   // TODO: validate body
   const { token } = req.body
   const { id } = req.params
@@ -178,7 +171,7 @@ app.put("/pictures/like/:id", (req, res) => {
     res.status(404).send("Invalid session!")
     return
   }
-  const username = getSessionUsername(token)
+  const username = await getSessionUsername(token)
   // TODO: validate edited fields! e.g. followers must be valid users
   setImageLikes(id, username)
   res.status(200).send()
