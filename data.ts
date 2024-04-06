@@ -1,5 +1,7 @@
 import * as sessionsDao from "./Sessions/dao";
 import { User } from "./types";
+import { error } from "console";
+import { ImageEntry, User } from "./types";
 
 // represents active sessions
 // map from token -> username
@@ -27,6 +29,13 @@ const USERS: Record<string, User> = {
     stats: {},
   },
 };
+
+const IMAGE_ENTRIES: Record<string, ImageEntry> = {
+  794978: {
+    id: '794978',
+    likes: [],
+  }
+}
 
 interface GameResult {
   id: string;
@@ -64,6 +73,31 @@ export interface GameSearchParameters {
   filter?: {
     players?: string[];
   };
+}
+
+export interface ApiEntry {
+  id: number;
+  previewURL: string;
+  webformatURL: string;
+  views: number;
+  downloads: number;
+  user: string;
+  tags: string;
+  likes: string[];
+}
+export interface ApiResult {
+  total: number;
+  totalHits: number;
+  hits: ApiEntry[];
+}
+
+export function formatPixbay(data : any) : ApiEntry[] {
+  var apiResult = data as ApiResult
+  for(var idx in apiResult.hits) {
+    var id = String(apiResult.hits[idx].id)
+    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id].likes
+  }
+  return apiResult.hits
 }
 
 // returns n game results based on filter and sort parameters
@@ -185,6 +219,11 @@ export function getPrivateUserInfo(username: string) {
 
 export function setUserInfo(username: string, newData: Partial<User>) {
   USERS[username] = { ...(USERS[username] || []), ...newData };
+}
+
+export function setImageLikes(id : string, username : string){
+  IMAGE_ENTRIES[id].likes = [ ...(IMAGE_ENTRIES[id].likes), username]
+  console.log(IMAGE_ENTRIES)
 }
 
 // TODO: add game states and types

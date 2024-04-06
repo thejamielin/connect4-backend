@@ -15,6 +15,9 @@ import {
   getGameResults,
   searchGameResults,
   GameSearchParameters,
+  setImageLikes,
+  ApiResult,
+  formatPixbay,
 } from "./data";
 import axios from "axios";
 dotenv.config();
@@ -116,7 +119,7 @@ app.put("/user/:username", (req, res) => {
   // TODO: validate body
   const {
     token,
-    editedFields: { following, email },
+    editedFields: { following, email, pfp },
   } = req.body;
   const { username } = req.params;
   if (!doesUserExist(username)) {
@@ -125,7 +128,7 @@ app.put("/user/:username", (req, res) => {
   }
   if (isChill(token, username)) {
     // TODO: validate edited fields! e.g. followers must be valid users
-    setUserInfo(username, { following, email });
+    setUserInfo(username, { following, email, pfp });
     res.status(200).send(getPrivateUserInfo(username));
   } else {
     res.status(401).send("Cannot edit other user's data!");
@@ -154,22 +157,33 @@ app.post("/games/search", (req, res) => {
 });
 
 app.get("/pictures/search", (req, res) => {
-  const { q } = req.query;
-  axios
-    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, q: q } })
-    .then((pixbayRes) => {
-      res.status(200).send(pixbayRes.data);
-    });
-});
+
+  const { q } = req.query
+  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, q: q}}).then((pixbayRes) => {
+    res.status(200).send(formatPixbay(pixbayRes.data))
+  })
+})
 
 app.get("/pictures/id", (req, res) => {
-  const { id } = req.query;
-  axios
-    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, id: id } })
-    .then((pixbayRes) => {
-      res.status(200).send(pixbayRes.data);
-    });
-});
+  const { id } = req.query
+  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, id: id}}).then((pixbayRes) => {
+    res.status(200).send(formatPixbay(pixbayRes.data))
+  }).catch(() => {res.status(404).send("Image not found!")})
+})
+
+app.put("/pictures/like/:id", (req, res) => {
+  // TODO: validate body
+  const { token } = req.body
+  const { id } = req.params
+  if(!doesSessionExist(token)){
+    res.status(404).send("Invalid session!")
+    return
+  }
+  const username = getSessionUsername(token)
+  // TODO: validate edited fields! e.g. followers must be valid users
+  setImageLikes(id, username)
+  res.status(200).send()
+})
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
