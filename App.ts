@@ -20,6 +20,7 @@ import {
   formatPixbay,
 } from "./data";
 import axios from "axios";
+import { User } from "./types";
 dotenv.config();
 
 const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
@@ -119,14 +120,17 @@ app.put("/user", (req, res) => {
   // TODO: validate body
   const {
     token,
-    editedFields: { following, email, pfp },
-  } = req.body;
+    editedFields
+  } = req.body as {
+    token: string,
+    editedFields: Partial<Pick<User, 'email' | 'pfp' | 'following'>>
+  };
   if(!sessionsDao.doesSessionExist(token)){
     res.status(404).send("Invalid Session!");
   }
   const username = getSessionUsername(token)
   // TODO: validate edited fields! e.g. followers must be valid users
-  setUserInfo(username, { following, email, pfp });
+  setUserInfo(username, editedFields);
   res.status(200).send(getPrivateUserInfo(username));
 });
 
