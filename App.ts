@@ -1,6 +1,7 @@
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 import {
   createNewUser,
   createSession,
@@ -17,12 +18,13 @@ import {
   GameSearchParameters,
 } from "./data";
 import axios from "axios";
-dotenv.config()
+dotenv.config();
 
-const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY
-const PIXBAY_URL = 'https://pixabay.com/api/'
+const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
+const PIXBAY_URL = "https://pixabay.com/api/";
+mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
-app.use(cors())
+app.use(cors());
 
 // TODO: replace temporary testing code here
 app.use(express.json());
@@ -82,58 +84,59 @@ app.post("/account/checkSession", (req, res) => {
   const { token } = req.body;
   if (doesSessionExist(token)) {
     res.status(200).send({
-      isValidSession: true
+      isValidSession: true,
     });
   } else {
     res.status(200).send({
-      isValidSession: false
+      isValidSession: false,
     });
   }
 });
 
-function isLoggedIn(req : {body: {token? : String}}) {
-  const { token } = req.body
-  return token === undefined
+function isLoggedIn(req: { body: { token?: String } }) {
+  const { token } = req.body;
+  return token === undefined;
 }
 
 // TODO: Rename this lol
-function isChill(token: string, username: string){
-  return doesSessionExist(token) && getSessionUsername(token) === username
+function isChill(token: string, username: string) {
+  return doesSessionExist(token) && getSessionUsername(token) === username;
 }
 
 app.post("/user/:username", (req, res) => {
   // TODO: validate body
-  const { token } = req.body
-  const { username } = req.params
-  if(!doesUserExist(username)){
-    res.status(404).send("User does not exist!")
-    return
+  const { token } = req.body;
+  const { username } = req.params;
+  if (!doesUserExist(username)) {
+    res.status(404).send("User does not exist!");
+    return;
   }
-  if(isChill(token, username)){
-    res.status(200).send(getPrivateUserInfo(username))
+  if (isChill(token, username)) {
+    res.status(200).send(getPrivateUserInfo(username));
+  } else {
+    res.status(200).send(getPublicUserInfo(username));
   }
-  else {
-    res.status(200).send(getPublicUserInfo(username))
-  }
-})
+});
 
 app.put("/user/:username", (req, res) => {
   // TODO: validate body
-  const { token, editedFields: {following, email} } = req.body
-  const { username } = req.params
-  if(!doesUserExist(username)){
-    res.status(404).send("User does not exist!")
-    return
+  const {
+    token,
+    editedFields: { following, email },
+  } = req.body;
+  const { username } = req.params;
+  if (!doesUserExist(username)) {
+    res.status(404).send("User does not exist!");
+    return;
   }
-  if(isChill(token, username)){
+  if (isChill(token, username)) {
     // TODO: validate edited fields! e.g. followers must be valid users
-    setUserInfo(username, { following, email })
-    res.status(200).send(getPrivateUserInfo(username))
+    setUserInfo(username, { following, email });
+    res.status(200).send(getPrivateUserInfo(username));
+  } else {
+    res.status(401).send("Cannot edit other user's data!");
   }
-  else {
-    res.status(401).send("Cannot edit other user's data!")
-  }
-})
+});
 
 app.get("/games", (req, res) => {
   // { gameIDs: string[] } => GameResult[]
@@ -141,7 +144,7 @@ app.get("/games", (req, res) => {
   const { gameIDs } = req.body;
   const gameResults = getGameResults(gameIDs);
   if (!gameResults) {
-    res.status(404).send('Invalid game IDs');
+    res.status(404).send("Invalid game IDs");
     return;
   }
   res.status(200).send(gameResults);
@@ -151,24 +154,28 @@ app.post("/games/search", (req, res) => {
   // TODO: validate body
   const searchParams: GameSearchParameters = req.body;
   if (searchParams.count < 0 || searchParams.count > 100) {
-    res.status(400).send("Pwease use a vawid numba of games >~<")
+    res.status(400).send("Pwease use a vawid numba of games >~<");
   }
   res.status(200).send(searchGameResults(searchParams));
 });
 
 app.get("/pictures/search", (req, res) => {
-  const { q } = req.query
-  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, q: q}}).then((pixbayRes) => {
-    res.status(200).send(pixbayRes.data)
-  })
-})
+  const { q } = req.query;
+  axios
+    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, q: q } })
+    .then((pixbayRes) => {
+      res.status(200).send(pixbayRes.data);
+    });
+});
 
 app.get("/pictures/id", (req, res) => {
-  const { id } = req.query
-  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, id: id}}).then((pixbayRes) => {
-    res.status(200).send(pixbayRes.data)
-  })
-})
+  const { id } = req.query;
+  axios
+    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, id: id } })
+    .then((pixbayRes) => {
+      res.status(200).send(pixbayRes.data);
+    });
+});
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
