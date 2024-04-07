@@ -38,7 +38,20 @@ export default function SessionRoutes(app: any) {
       });
     }
   };
+  const getUsername = async (req: any, res: any) => {
+    // { token: string } -> { username: string }
+    const { token } = req.body;
+    const username = await dao.getSessionUsername(token);
+    if (username === false) {
+      res.status(404).send("Invalid token");
+      return;
+    } else {
+      res.status(200).send({ username: username });
+    }
+  };
   app.post("/account/login", login);
   app.post("/account/logout", logout);
   app.post("/account/checkSession", checkSession);
+  // TODO change to get
+  app.post("/account", getUsername);
 }
