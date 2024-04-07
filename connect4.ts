@@ -76,6 +76,10 @@ export namespace Connect4Board {
     return undefined;
   }
 
+  export function checkBoardFull(board: Connect4Board): boolean {
+    return board.slots.findIndex(row => row.findIndex(slot => slot === undefined) !== -1) === -1;
+  }
+
   export function inBounds(board: Connect4Board, row: number, col: number): boolean {
     return row >= 0 && row < board.slots.length && col >= 0 && col < board.slots[0].length;
   }

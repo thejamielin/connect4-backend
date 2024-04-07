@@ -28,7 +28,7 @@ interface GameCreationData extends CommonGameData {
   readyPlayerIDs: string[];
 }
 
-interface OngoingGameData extends CommonGameData {
+export interface OngoingGameData extends CommonGameData {
   phase: 'ongoing';
   board: Connect4Board;
 }
@@ -64,18 +64,17 @@ export function createGame(playerID: string) {
   GAMES.set(game.id, game);
 }
 
+// returns a boolean indicating whether the game is ready to start or not
 export function setReady(game: GameCreationData, playerID: string) {
   const matchID = (id: string) => id === playerID;
   if (!game.playerIDs.find(matchID) || game.readyPlayerIDs.find(matchID)) {
-    return;
+    return false;
   }
   game.readyPlayerIDs = [...game.readyPlayerIDs, playerID];
-  if (game.playerIDs.length === game.readyPlayerIDs.length) {
-    startGame(game);
-  }
+  return game.playerIDs.length === game.readyPlayerIDs.length;
 }
 
-export function startGame(game: GameCreationData) {
+export function startGame(game: GameCreationData): OngoingGameData {
   const startedGame: OngoingGameData = {
     id: game.id,
     phase: 'ongoing',
@@ -83,6 +82,7 @@ export function startGame(game: GameCreationData) {
     board: Connect4Board.newBoard(4, 2, 7, 6)
   };
   GAMES.set(game.id, startedGame);
+  return startedGame;
 }
 
 export function validMove(game: Game, playerID: string, column: number): game is OngoingGameData {

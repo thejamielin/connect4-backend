@@ -6,7 +6,7 @@ import UserRoutes from "./Users/routes";
 import PictureRoutes from "./Pictures/routes";
 import cors from "cors";
 import { Connect4Board } from "./connect4";
-import { Game, findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults } from "./data";
+import { Game, findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, OngoingGameData } from "./data";
 
 mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
@@ -25,12 +25,18 @@ type ClientRequest = {
 };
 
 type ServerMessage = {
+  type: 'state';
+  gameState: Game
+} | {
+  type: 'join';
+  playerID: string;
+} | {
   type: 'ready';
-  playerIDs: string[];
+  playerID: string;
 } | {
   type: 'move';
   playerID: string;
-  move: Connect4Board.ExecutedMove;
+  gameState: OngoingGameData
 } | {
   type: 'gameover';
   result: {
@@ -47,7 +53,33 @@ type ServerMessage = {
   }[];
 }
 
-const CLIENTS: Map<string, Parameters<WebsocketRequestHandler>[0]> = new Map();
+// TODO: implement games closing if no activity for some time w/ creation timestamp
+enum ConnectionStatusCode {
+  NOT_FOUND = 4004,
+  GAME_FULL = 4001,
+  GAME_ALREADY_STARTED = 4002,
+  REDUNDANT_CONNECTION = 4008
+}
+
+type GameClients = Map<string, Parameters<WebsocketRequestHandler>[0]>;
+const GAME_CLIENT_GROUPS: Map<string, GameClients> = new Map();
+function storeConnection(game: Game, playerID: string, connection: Parameters<WebsocketRequestHandler>[0]) {
+  let gameClients = GAME_CLIENT_GROUPS.get(game.id);
+  if (!gameClients) {
+    gameClients = new Map();
+    GAME_CLIENT_GROUPS.set(game.id, gameClients);
+  }
+  gameClients.get(playerID)?.close(ConnectionStatusCode.REDUNDANT_CONNECTION);
+  gameClients.set(playerID, connection);
+}
+
+function broadcastGameMessage(game: Game, message: ServerMessage) {
+  const gameClients = GAME_CLIENT_GROUPS.get(game.id);
+  if (!gameClients) {
+    return;
+  }
+  gameClients.forEach(client => client.send(JSON.stringify(message)));
+}
 
 expressWs(app).app.ws('/game/:gameID', (ws, req) => {
   ws.on('open', () => {
@@ -61,7 +93,7 @@ expressWs(app).app.ws('/game/:gameID', (ws, req) => {
     function accessGame(): Game | undefined {
       const game = findGame(gameID);
       if (!game) {
-        ws.close(4000, 'This game does not exist.');
+        ws.close(ConnectionStatusCode.NOT_FOUND, 'This game does not exist.');
         return undefined;
       }
       return game;
@@ -73,12 +105,16 @@ expressWs(app).app.ws('/game/:gameID', (ws, req) => {
       return;
     }
     if (!joinGame(game, playerID)) {
-      ws.close(4001, 'Game is full.');
+      ws.close(ConnectionStatusCode.GAME_FULL, 'Game is full.');
       return;
     }
     // store the established connection
-    CLIENTS.get(token)?.close();
-    CLIENTS.set(token, ws);
+    storeConnection(game, playerID, ws);
+
+    const initialStateMessage: ServerMessage = { type: 'state', gameState: game };
+    ws.send(JSON.stringify({initialStateMessage}))
+
+    broadcastGameMessage(game, { type: 'join', playerID });
     
     ws.on('message', data => {
       const game = accessGame();
@@ -90,12 +126,30 @@ expressWs(app).app.ws('/game/:gameID', (ws, req) => {
         if (game.phase !== 'creation') {
           return;
         }
-        setReady(game, playerID);
-        // TODO: relay message to game players
+        const allReady = setReady(game, playerID);
+        broadcastGameMessage(game, { type: 'ready', playerID });
+        if (allReady) {
+          const startedGame = startGame(game);
+          broadcastGameMessage(game, { type: 'state', gameState: startedGame });
+        }
+      } else if (message.type === 'move') {
+        if (validMove(game, playerID, message.column)) {
+          applyMove(game, message.column);
+          broadcastGameMessage(game, { type: 'move', playerID, gameState: game });
+          const winningConnect = Connect4Board.findLastMoveWin(game.board);
+          if (winningConnect) {
+            broadcastGameMessage(game, { type: 'gameover', result: { winnerID: playerID, line: winningConnect}});
+          } else if (Connect4Board.checkBoardFull(game.board)) {
+            broadcastGameMessage(game, { type: 'gameover', result: { winnerID: false }});
+          }
+          // TODO: handle game cleanup and ending
+        } else {
+          // TODO: handle misbehaving clients?
+        }
       }
     });
     ws.on('close', () => {
-      CLIENTS.delete(token);
+      GAME_CLIENT_GROUPS.delete(token);
     })
   });
 });
