@@ -58,15 +58,23 @@ interface EndedGameData extends CommonGameData {
   result: GameResult;
 }
 
-type Game = GameCreationData | OngoingGameData | EndedGameData;
+export type Game = GameCreationData | OngoingGameData | EndedGameData;
 
 const GAMES: Map<string, Game> = new Map();
 
-function getGame(gameID: string): Game | undefined {
+export function findGame(gameID: string): Game | undefined {
   return GAMES.get(gameID);
 }
 
-function createGame(playerID: string) {
+export function joinGame(game: Game, playerID: string): boolean {
+  if (game.playerIDs.length >= 2) {
+    return false;
+  }
+  game.playerIDs = [...game.playerIDs, playerID];
+  return true;
+}
+
+export function createGame(playerID: string) {
   const game: Game = {
     id: uuidv4(),
     phase: 'creation',
@@ -76,7 +84,7 @@ function createGame(playerID: string) {
   GAMES.set(game.id, game);
 }
 
-function setReady(game: GameCreationData, playerID: string) {
+export function setReady(game: GameCreationData, playerID: string) {
   const matchID = (id: string) => id === playerID;
   if (!game.playerIDs.find(matchID) || game.readyPlayerIDs.find(matchID)) {
     return;
@@ -87,7 +95,7 @@ function setReady(game: GameCreationData, playerID: string) {
   }
 }
 
-function startGame(game: GameCreationData) {
+export function startGame(game: GameCreationData) {
   const startedGame: OngoingGameData = {
     id: game.id,
     phase: 'ongoing',
@@ -97,7 +105,7 @@ function startGame(game: GameCreationData) {
   GAMES.set(game.id, startedGame);
 }
 
-function validMove(game: Game, playerID: string, column: number): game is OngoingGameData {
+export function validMove(game: Game, playerID: string, column: number): game is OngoingGameData {
   // game must be ongoing
   if (game.phase !== 'ongoing') {
     return false;
@@ -113,16 +121,8 @@ function validMove(game: Game, playerID: string, column: number): game is Ongoin
   return true;
 }
 
-interface ExecutedMove {
-  playerIndex: number;
-  row: number;
-  column: number;
-}
-
-function applyMove(game: OngoingGameData, column: number): ExecutedMove {
-  const playerIndex = game.board.playerTurn;
-  const row = Connect4Board.move(game.board, column);
-  return { playerIndex, row, column };
+export function applyMove(game: OngoingGameData, column: number) {
+  Connect4Board.move(game.board, column);
 }
 
 interface GameResult {

@@ -1,4 +1,5 @@
 import express from "express";
+import expressWs, { WebsocketRequestHandler } from "express-ws";
 import mongoose from "mongoose";
 import SessionRoutes from "./Sessions/routes";
 import UserRoutes from "./Users/routes";
@@ -18,9 +19,14 @@ import {
   setImageLikes,
   ApiResult,
   formatPixbay,
+  findGame,
+  Game,
+  setReady,
+  joinGame,
 } from "./data";
 import axios from "axios";
 import { User } from "./types";
+import { Connect4Board } from "./connect4";
 dotenv.config();
 
 const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
@@ -31,6 +37,92 @@ app.use(cors());
 
 // TODO: replace temporary testing code here
 app.use(express.json());
+
+type ClientRequest = {
+  type: 'ready';
+} | {
+  type: 'move';
+  column: number;
+} | {
+  type: 'chat';
+  message: string;
+};
+
+type ServerMessage = {
+  type: 'ready';
+  playerIDs: string[];
+} | {
+  type: 'move';
+  playerID: string;
+  move: Connect4Board.ExecutedMove;
+} | {
+  type: 'gameover';
+  result: {
+    winnerID: string;
+    line: [number, number][];
+  } | {
+    winnerID: false;
+  }
+} | {
+  type: 'chat';
+  messages: {
+    playerID: string;
+    text: string;
+  }[];
+}
+
+const CLIENTS: Map<string, Parameters<WebsocketRequestHandler>[0]> = new Map();
+
+expressWs(app).app.ws('/game/:gameID', (ws, req) => {
+  ws.on('open', () => {
+    const { gameID } = req.params;
+    const { authorization: token } = req.headers;
+    if (token === undefined) {
+      return;
+    }
+    const playerID = ''; // TODO: retrieve player ID from token
+
+    function accessGame(): Game | undefined {
+      const game = findGame(gameID);
+      if (!game) {
+        ws.close(4000, 'This game does not exist.');
+        return undefined;
+      }
+      return game;
+    }
+
+    // close connection if game doesn't exist
+    const game = accessGame();
+    if (!game) {
+      return;
+    }
+    if (!joinGame(game, playerID)) {
+      ws.close(4001, 'Game is full.');
+      return;
+    }
+    // store the established connection
+    CLIENTS.get(token)?.close();
+    CLIENTS.set(token, ws);
+    
+    ws.on('message', data => {
+      const game = accessGame();
+      if (!game) {
+        return;
+      }
+      const message: ClientRequest = JSON.parse(data.toString());
+      if (message.type === 'ready') {
+        if (game.phase !== 'creation') {
+          return;
+        }
+        setReady(game, playerID);
+        // TODO: relay message to game players
+      }
+    });
+    ws.on('close', () => {
+      CLIENTS.delete(token);
+    })
+  });
+});
 
 interface AccountRegisterRequest {
   username: string;
