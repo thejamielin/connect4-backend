@@ -2,33 +2,6 @@ import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
 import { ImageEntry, User } from "./types";
 
-// represents active sessions
-// map from token -> username
-const SESSIONS: Record<string, string> = {
-  token1: "theor",
-};
-
-// represents all registered users
-// map from username -> userdata
-const USERS: Record<string, User> = {
-  theor: {
-    username: "theor",
-    password: "password",
-    email: "loser@gmail.com",
-    isBeginner: true,
-    following: ["jarm"],
-    stats: {},
-  },
-  jarm: {
-    username: "jarm",
-    password: "secure",
-    email: "winner@gmail.com",
-    isBeginner: true,
-    following: [],
-    stats: {},
-  },
-};
-
 const IMAGE_ENTRIES: Record<string, ImageEntry> = {
   794978: {
     id: "794978",
