@@ -39,27 +39,6 @@ interface AuthRequest {
 SessionRoutes(app);
 UserRoutes(app);
 
-app.post("/account/checkSession", async (req, res) => {
-  // { token: string } -> {}
-  // TODO: validate body
-  const { token } = req.body;
-  const doesExist = await sessionsDao.doesSessionExist(token);
-  if (doesExist) {
-    res.status(200).send({
-      isValidSession: true,
-    });
-  } else {
-    res.status(200).send({
-      isValidSession: false,
-    });
-  }
-});
-
-function isLoggedIn(req: { body: { token?: String } }) {
-  const { token } = req.body;
-  return token === undefined;
-}
-
 app.get("/games", (req, res) => {
   // { gameIDs: string[] } => GameResult[]
   // TODO: validate body
