@@ -1,42 +1,22 @@
 import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
-import { ImageEntry, User } from "./types";
 import { Connect4Board } from "./connect4";
 import { v4 as uuidv4 } from "uuid";
+import { PictureData } from "./types";
+import dotenv from "dotenv";
 
-// represents active sessions
-// map from token -> username
-const SESSIONS: Record<string, string> = {
-  token1: "theor",
-};
+dotenv.config();
+export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
+export const PIXBAY_URL = "https://pixabay.com/api/";
 
-// represents all registered users
-// map from username -> userdata
-const USERS: Record<string, User> = {
-  theor: {
-    username: "theor",
-    password: "password",
-    email: "loser@gmail.com",
-    beginner: true,
-    following: ["jarm"],
-    stats: {},
-  },
-  jarm: {
-    username: "jarm",
-    password: "secure",
-    email: "winner@gmail.com",
-    beginner: true,
-    following: [],
-    stats: {},
-  },
-};
-
-const IMAGE_ENTRIES: Record<string, ImageEntry> = {
+const IMAGE_ENTRIES: Record<string, PictureData> = {
   794978: {
-    id: '794978',
+    id: "794978",
     likes: [],
-  }
-}
+  },
+};
+
+
 
 interface CommonGameData {
   id: string;
@@ -163,31 +143,6 @@ export interface GameSearchParameters {
   };
 }
 
-export interface ApiEntry {
-  id: number;
-  previewURL: string;
-  webformatURL: string;
-  views: number;
-  downloads: number;
-  user: string;
-  tags: string;
-  likes: string[];
-}
-export interface ApiResult {
-  total: number;
-  totalHits: number;
-  hits: ApiEntry[];
-}
-
-export function formatPixbay(data : any) : ApiEntry[] {
-  var apiResult = data as ApiResult
-  for(var idx in apiResult.hits) {
-    var id = String(apiResult.hits[idx].id)
-    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id]?.likes || []
-  }
-  return apiResult.hits
-}
-
 // returns n game results based on filter and sort parameters
 export function searchGameResults({
   count,
@@ -236,84 +191,6 @@ export function getGameResults(gameIDs: string[]): GameResult[] | undefined {
     games.push(GAME_HISTORY[gameID]);
   }
   return games;
-}
-
-// determines if the given username already exists in the database
-export function doesUserExist(username: string): boolean {
-  return !!USERS[username];
-}
-
-// determines if the given password is correctly associated with the given username
-export function isCorrectPassword(username: string, password: string): boolean {
-  return doesUserExist(username) && USERS[username].password === password;
-}
-
-// creates a new user, returns true on success and false if the user already exists
-export function createNewUser(
-  username: string,
-  password: string,
-  email: string
-): boolean {
-  // fails if the user already exists
-  if (doesUserExist(username)) {
-    return false;
-  }
-
-  USERS[username] = {
-    username: username,
-    password: password,
-    email: email,
-    following: [],
-    stats: {},
-    beginner: false,
-  };
-  return true;
-}
-
-export async function getSessionUsername(token: string) {
-  if (await sessionsDao.doesSessionExist(token)) {
-    return SESSIONS[token];
-  }
-  throw Error("Session does not exist!");
-}
-
-export function getAllUserInfo(username: string) {
-  if (doesUserExist(username)) {
-    return USERS[username];
-  }
-  throw Error("User does not exist!");
-}
-
-export function getPublicUserInfo(username: string) {
-  const userInfo = getAllUserInfo(username);
-  return {
-    username: userInfo.username,
-    beginner: userInfo.beginner,
-    following: userInfo.following,
-    stats: userInfo.stats,
-  };
-}
-
-export function getPrivateUserInfo(username: string) {
-  const userInfo = getAllUserInfo(username);
-  return {
-    username: userInfo.username,
-    email: userInfo.email,
-    beginner: userInfo.beginner,
-    following: userInfo.following,
-    stats: userInfo.stats,
-  };
-}
-
-export function setUserInfo(username: string, newData: Partial<User>) {
-  USERS[username] = { ...(USERS[username] || []), ...newData };
-}
-
-export function setImageLikes(id : string, username : string){
-  if(!IMAGE_ENTRIES[id]){
-    IMAGE_ENTRIES[id] = {id: id, likes: []}
-  }
-  IMAGE_ENTRIES[id].likes = [ ...(IMAGE_ENTRIES[id]?.likes || []), username]
 }
 
 // TODO: add game states and types

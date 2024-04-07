@@ -1,3 +1,5 @@
+import { getUser } from "../Users/dao";
+import { User } from "../types";
 import { sessionModel } from "./model";
 import { v4 as uuidv4 } from "uuid";
 // creates a session and returns the newly generated session id
@@ -14,7 +16,20 @@ export async function destroySession(token: string) {
 }
 
 export async function doesSessionExist(token: string) : Promise<boolean> {
+  return await !!getSessionUsername(token)
+}
+
+// determines if the given password is correctly associated with the given username
+export async function isCorrectPassword(username: string, password: string): Promise<boolean> {
+  const user = await getUser(username)
+  return (!!user && user.password === password);
+}
+
+export async function getSessionUsername(token: string) : Promise<string | false>{
   return await sessionModel.findOne({ token: token }).then((session) => {
-    return (session !== null)
+    if(session === null){
+      return false;
+    }
+    return (session["username"])
   })
 }

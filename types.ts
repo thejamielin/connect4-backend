@@ -1,7 +1,7 @@
 // Backend data
 export interface User {
   email: string;
-  beginner: boolean;
+  isBeginner: boolean;
   username: string;
   following: string[];
   stats: UserStats;
@@ -13,7 +13,31 @@ export interface UserStats {
   // TODO: Add stat fields
 }
 
-export interface ImageEntry {
+export interface AccountRegisterRequest {
+  username: string;
+  password: string;
+  email: string;
+  isBeginner: boolean;
+}
+
+export interface PictureData {
   id: string;
-  likes: string[] // List of usernames
+  likes: string[]; // List of usernames
+}
+
+// interpretation of a single image Pixbay API response
+export interface ApiEntry {
+  id: number;
+  previewURL: string;
+  webformatURL: string;
+  views: number;
+  downloads: number;
+  user: string;
+  tags: string;
+  likes: string[];
+}
+export interface ApiResult {
+  total: number;
+  totalHits: number;
+  hits: ApiEntry[];
 }
