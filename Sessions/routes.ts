@@ -1,4 +1,3 @@
-import { isCorrectPassword } from "../data";
 import * as dao from "./dao";
 
 interface AccountLoginRequest {
@@ -6,11 +5,11 @@ interface AccountLoginRequest {
   password: string;
 }
 
-let currentUser = null;
 export default function SessionRoutes(app: any) {
   const login = async (req: any, res: any) => {
     const { username, password } = req.body as AccountLoginRequest;
-    if (isCorrectPassword(username, password)) {
+    const isCorrect = await dao.isCorrectPassword(username, password)
+    if (isCorrect) {
       const sessionID = dao.createSession(username);
       res.send({ token: sessionID });
     } else {

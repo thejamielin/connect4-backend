@@ -3,15 +3,10 @@ import mongoose from "mongoose";
 import SessionRoutes from "./Sessions/routes";
 import UserRoutes from "./Users/routes";
 import * as sessionsDao from "./Sessions/dao";
+import * as usersDao from "./Users/dao";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
-  createNewUser,
-  doesUserExist,
-  getSessionUsername,
-  getPublicUserInfo,
-  getPrivateUserInfo,
-  setUserInfo,
   getGameResults,
   searchGameResults,
   GameSearchParameters,
@@ -21,6 +16,7 @@ import {
 } from "./data";
 import axios from "axios";
 import { User } from "./types";
+import { getSessionUsername } from "./Sessions/dao";
 dotenv.config();
 
 const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
@@ -56,7 +52,7 @@ app.post("/account/register", (req, res) => {
   // TODO: use request body validation checker
   const { username, password, email } = req.body as AccountRegisterRequest;
   // send failed response if user creation fails due to already existing
-  if (!createNewUser(username, password, email)) {
+  if (!usersDao.createNewUser(username, password, email)) {
     res.status(400).send({});
     return;
   }
@@ -85,48 +81,6 @@ function isLoggedIn(req: { body: { token?: String } }) {
   return token === undefined;
 }
 
-// TODO: Rename this lol
-async function isChill(token: string, username: string) {
-  return (
-    await sessionsDao.doesSessionExist(token) &&
-    await getSessionUsername(token) === username
-  );
-}
-
-// GET function, used post because we didn't want to reformat the body (TODO: change this?)
-app.post("/user/:username", async (req, res) => {
-  // TODO: validate body
-  const { token } = req.body;
-  const { username } = req.params;
-  if (!doesUserExist(username)) {
-    res.status(404).send("User does not exist!");
-    return;
-  }
-  if (await isChill(token, username)) {
-    res.status(200).send(getPrivateUserInfo(username));
-  } else {
-    res.status(200).send(getPublicUserInfo(username));
-  }
-});
-
-app.put("/user", async (req, res) => {
-  // TODO: validate body
-  const {
-    token,
-    editedFields
-  } = req.body as {
-    token: string,
-    editedFields: Partial<Pick<User, 'email' | 'pfp' | 'following'>>
-  };
-  if(!sessionsDao.doesSessionExist(token)){
-    res.status(404).send("Invalid Session!");
-  }
-  const username = await getSessionUsername(token)
-  // TODO: validate edited fields! e.g. followers must be valid users
-  setUserInfo(username, editedFields);
-  res.status(200).send(getPrivateUserInfo(username));
-});
-
 app.get("/games", (req, res) => {
   // { gameIDs: string[] } => GameResult[]
   // TODO: validate body
@@ -149,7 +103,6 @@ app.post("/games/search", (req, res) => {
 });
 
 app.get("/pictures/search", (req, res) => {
-
   const { q } = req.query
   axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, q: q}}).then((pixbayRes) => {
     res.status(200).send(formatPixbay(pixbayRes.data))
@@ -167,11 +120,12 @@ app.put("/pictures/like/:id", async (req, res) => {
   // TODO: validate body
   const { token } = req.body
   const { id } = req.params
-  if(!sessionsDao.doesSessionExist(token)){
+  const username = await getSessionUsername(token)
+  if(username === false){
     res.status(404).send("Invalid session!")
     return
   }
-  const username = await getSessionUsername(token)
+  
   // TODO: validate edited fields! e.g. followers must be valid users
   setImageLikes(id, username)
   res.status(200).send()
