@@ -53,7 +53,7 @@ export default function UserRoutes(app: any) {
     res.send({ token: sessionID });
   };
   app.post("/user/:username", findUserByUsername);
-  app.put("/user/:username", updateUser);
+  app.put("/user", updateUser);
   app.post("/account/register", register);
 
   // Helper functions
