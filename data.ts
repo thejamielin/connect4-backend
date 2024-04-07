@@ -45,7 +45,7 @@ export function joinGame(game: Game, playerID: string): boolean {
   return true;
 }
 
-export function createGame(playerID: string) {
+export function createGame(playerID: string): string {
   const game: Game = {
     id: uuidv4(),
     phase: 'creation',
@@ -53,6 +53,7 @@ export function createGame(playerID: string) {
     readyPlayerIDs: []
   };
   GAMES.set(game.id, game);
+  return game.id;
 }
 
 // returns a boolean indicating whether the game is ready to start or not
