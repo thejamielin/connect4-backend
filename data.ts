@@ -9,15 +9,6 @@ dotenv.config();
 export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
 export const PIXBAY_URL = "https://pixabay.com/api/";
 
-const IMAGE_ENTRIES: Record<string, PictureData> = {
-  794978: {
-    id: "794978",
-    likes: [],
-  },
-};
-
-
-
 interface CommonGameData {
   id: string;
   playerIDs: string[];

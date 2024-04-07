@@ -12,24 +12,30 @@ export function createSession(username: string): string {
   return newSession.token;
 }
 export async function destroySession(token: string) {
-  await sessionModel.deleteOne({ token: token })
+  await sessionModel.deleteOne({ token: token });
 }
 
-export async function doesSessionExist(token: string) : Promise<boolean> {
-  return await !!getSessionUsername(token)
+export async function doesSessionExist(token: string): Promise<boolean> {
+  const maybeUsername = await getSessionUsername(token);
+  return !!maybeUsername;
 }
 
 // determines if the given password is correctly associated with the given username
-export async function isCorrectPassword(username: string, password: string): Promise<boolean> {
-  const user = await getUser(username)
-  return (!!user && user.password === password);
+export async function isCorrectPassword(
+  username: string,
+  password: string
+): Promise<boolean> {
+  const user = await getUser(username);
+  return !!user && user.password === password;
 }
 
-export async function getSessionUsername(token: string) : Promise<string | false>{
+export async function getSessionUsername(
+  token: string
+): Promise<string | false> {
   return await sessionModel.findOne({ token: token }).then((session) => {
-    if(session === null){
+    if (session === null) {
       return false;
     }
-    return (session["username"])
-  })
+    return session["username"];
+  });
 }
