@@ -1,6 +1,8 @@
 import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
 import { ImageEntry, User } from "./types";
+import { Connect4Board } from "./connect4";
+import { v4 as uuidv4 } from "uuid";
 
 // represents active sessions
 // map from token -> username
@@ -34,6 +36,93 @@ const IMAGE_ENTRIES: Record<string, ImageEntry> = {
     id: '794978',
     likes: [],
   }
+}
+
+interface CommonGameData {
+  id: string;
+  playerIDs: string[];
+}
+
+interface GameCreationData extends CommonGameData {
+  phase: 'creation';
+  readyPlayerIDs: string[];
+}
+
+interface OngoingGameData extends CommonGameData {
+  phase: 'ongoing';
+  board: Connect4Board;
+}
+
+interface EndedGameData extends CommonGameData {
+  phase: 'over';
+  result: GameResult;
+}
+
+type Game = GameCreationData | OngoingGameData | EndedGameData;
+
+const GAMES: Map<string, Game> = new Map();
+
+function getGame(gameID: string): Game | undefined {
+  return GAMES.get(gameID);
+}
+
+function createGame(playerID: string) {
+  const game: Game = {
+    id: uuidv4(),
+    phase: 'creation',
+    playerIDs: [playerID],
+    readyPlayerIDs: []
+  };
+  GAMES.set(game.id, game);
+}
+
+function setReady(game: GameCreationData, playerID: string) {
+  const matchID = (id: string) => id === playerID;
+  if (!game.playerIDs.find(matchID) || game.readyPlayerIDs.find(matchID)) {
+    return;
+  }
+  game.readyPlayerIDs = [...game.readyPlayerIDs, playerID];
+  if (game.playerIDs.length === game.readyPlayerIDs.length) {
+    startGame(game);
+  }
+}
+
+function startGame(game: GameCreationData) {
+  const startedGame: OngoingGameData = {
+    id: game.id,
+    phase: 'ongoing',
+    playerIDs: game.playerIDs,
+    board: Connect4Board.newBoard(4, 2, 7, 6)
+  };
+  GAMES.set(game.id, startedGame);
+}
+
+function validMove(game: Game, playerID: string, column: number): game is OngoingGameData {
+  // game must be ongoing
+  if (game.phase !== 'ongoing') {
+    return false;
+  }
+  // it must be this player's turn
+  if (game.playerIDs[game.board.playerTurn] !== playerID) {
+    return false;
+  }
+  // the player's move must be legal
+  if (!Connect4Board.canMove(game.board, column)) {
+    return false;
+  }
+  return true;
+}
+
+interface ExecutedMove {
+  playerIndex: number;
+  row: number;
+  column: number;
+}
+
+function applyMove(game: OngoingGameData, column: number): ExecutedMove {
+  const playerIndex = game.board.playerTurn;
+  const row = Connect4Board.move(game.board, column);
+  return { playerIndex, row, column };
 }
 
 interface GameResult {
