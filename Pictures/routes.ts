@@ -20,7 +20,7 @@ export default function PictureRoutes(app: any) {
     axios
       .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, id: id } })
       .then(async (pixbayRes) => {
-        res.status(200).send(await formatPixbay(pixbayRes.data));
+        res.status(200).send((await formatPixbay(pixbayRes.data))[0]);
       })
       .catch(() => {
         res.status(404).send("Image not found!");
