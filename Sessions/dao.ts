@@ -29,10 +29,11 @@ export async function isCorrectPassword(
   return !!user && user.password === password;
 }
 
-export async function getSessionUsername(
+export function getSessionUsername(
   token: string
 ): Promise<string | false> {
-  return await sessionModel.findOne({ token: token }).then((session) => {
+  return sessionModel.findOne({ token: token }).then((session) => {
+    console.log(token, session)
     if (session === null) {
       return false;
     }

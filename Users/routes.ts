@@ -24,7 +24,8 @@ export default function UserRoutes(app: any) {
   };
   const updateUser = async (req: any, res: any) => {
     // TODO: validate body
-    const { token, editedFields } = req.body as {
+    const { token, editedFields } = req.body.body as 
+    {
       token: string;
       editedFields: Partial<Pick<User, "email" | "pfp" | "following">>;
     };
@@ -36,7 +37,7 @@ export default function UserRoutes(app: any) {
 
     // TODO: validate edited fields! e.g. followers must be valid users
     usersDao.setUserInfo(username, editedFields);
-    res.status(200).send(await getPrivateUserInfo(username));
+    res.status(200).send({success: true});
   };
   const register = async (req: any, res: any) => {
     // { username: string, password: string, email: string } -> { token?: string }
@@ -53,7 +54,7 @@ export default function UserRoutes(app: any) {
     res.send({ token: sessionID });
   };
   app.post("/user/:username", findUserByUsername);
-  app.put("/user/:username", updateUser);
+  app.put("/user", updateUser);
   app.post("/account/register", register);
 
   // Helper functions
@@ -72,6 +73,7 @@ export default function UserRoutes(app: any) {
       isBeginner: userInfo.isBeginner,
       following: userInfo.following,
       stats: userInfo.stats,
+      pfp: userInfo.pfp
     };
   }
 
@@ -86,6 +88,7 @@ export default function UserRoutes(app: any) {
       isBeginner: userInfo.isBeginner,
       following: userInfo.following,
       stats: userInfo.stats,
+      pfp: userInfo.pfp
     };
   }
 }
