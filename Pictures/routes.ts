@@ -30,7 +30,6 @@ export default function PictureRoutes(app: any) {
   // get a list of APIEntries representing pictures based on a search query
   const findPicturesByQuery = async (req: any, res: any) => {
     const { q } = req.query;
-    console.log(PIXBAY_API_KEY);
     axios
       .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, q: q } })
       .then(async (pixbayRes) => {
@@ -53,7 +52,7 @@ export default function PictureRoutes(app: any) {
     dao.addOneLike(id, username);
     res.status(200).send();
   };
-  app.get("/pictures/:id", findPictureById);
   app.get("/pictures/search", findPicturesByQuery);
+  app.get("/pictures/:id", findPictureById);
   app.put("/pictures/like/:id", addLikeToPicture);
 }
