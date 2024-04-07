@@ -4,32 +4,11 @@ import { Connect4Board } from "./connect4";
 import { v4 as uuidv4 } from "uuid";
 import { PictureData } from "./types";
 import dotenv from "dotenv";
+import { Game, GameCreationData, OngoingGameData, GameResult } from "./gameData";
 
 dotenv.config();
 export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
 export const PIXBAY_URL = "https://pixabay.com/api/";
-
-interface CommonGameData {
-  id: string;
-  playerIDs: string[];
-}
-
-interface GameCreationData extends CommonGameData {
-  phase: 'creation';
-  readyPlayerIDs: string[];
-}
-
-export interface OngoingGameData extends CommonGameData {
-  phase: 'ongoing';
-  board: Connect4Board;
-}
-
-interface EndedGameData extends CommonGameData {
-  phase: 'over';
-  result: GameResult;
-}
-
-export type Game = GameCreationData | OngoingGameData | EndedGameData;
 
 const GAMES: Map<string, Game> = new Map();
 
@@ -95,16 +74,6 @@ export function validMove(game: Game, playerID: string, column: number): game is
 
 export function applyMove(game: OngoingGameData, column: number) {
   Connect4Board.move(game.board, column);
-}
-
-interface GameResult {
-  id: string;
-  player1: string;
-  player2: string;
-  // if winner is undefined, the game ended in a draw
-  winner?: string;
-  //moves: Move[];
-  date: Date;
 }
 
 // const ACTIVE_GAMES: Record<string, ActiveGame> = {

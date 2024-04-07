@@ -6,8 +6,9 @@ import UserRoutes from "./Users/routes";
 import PictureRoutes from "./Pictures/routes";
 import cors from "cors";
 import { Connect4Board } from "./connect4";
-import { Game, findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, OngoingGameData, createGame } from "./data";
+import { findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, createGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
+import { ConnectionStatusCode, ServerMessage, ClientRequest, Game } from "./gameData";
 
 mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
@@ -16,53 +17,6 @@ app.use(cors());
 app.use(express.json());
 expressWs(app);
 
-type ClientRequest = {
-  type: 'ready';
-} | {
-  type: 'move';
-  column: number;
-} | {
-  type: 'chat';
-  message: string;
-};
-
-type ServerMessage = {
-  type: 'state';
-  gameState: Game
-} | {
-  type: 'join';
-  playerID: string;
-} | {
-  type: 'ready';
-  playerID: string;
-} | {
-  type: 'move';
-  playerID: string;
-  gameState: OngoingGameData
-} | {
-  type: 'gameover';
-  result: {
-    winnerID: string;
-    line: [number, number][];
-  } | {
-    winnerID: false;
-  }
-} | {
-  type: 'chat';
-  messages: {
-    playerID: string;
-    text: string;
-  }[];
-}
-
-// TODO: implement games closing if no activity for some time w/ creation timestamp
-enum ConnectionStatusCode {
-  NOT_FOUND = 4004,
-  NOT_AUTHORIZED = 4001,
-  GAME_FULL = 4003,
-  GAME_ALREADY_STARTED = 4002,
-  REDUNDANT_CONNECTION = 4008
-}
 
 type GameClients = Map<string, Parameters<WebsocketRequestHandler>[0]>;
 const GAME_CLIENT_GROUPS: Map<string, GameClients> = new Map();
@@ -131,7 +85,7 @@ router.ws('/game/:gameID', async (ws, req) => {
   storeConnection(game, playerID, ws);
   console.log('everything dandy')
   const initialStateMessage: ServerMessage = { type: 'state', gameState: game };
-  ws.send(JSON.stringify({initialStateMessage}))
+  ws.send(JSON.stringify(initialStateMessage))
   console.log('send initial state')
 
   broadcastGameMessage(game, { type: 'join', playerID });
@@ -147,8 +101,12 @@ router.ws('/game/:gameID', async (ws, req) => {
       if (game.phase !== 'creation') {
         return;
       }
+      if (game.readyPlayerIDs.find(id => id === playerID) !== undefined) {
+        return;
+      }
       const allReady = setReady(game, playerID);
       broadcastGameMessage(game, { type: 'ready', playerID });
+      console.log('all ready? ', allReady)
       if (allReady) {
         const startedGame = startGame(game);
         broadcastGameMessage(game, { type: 'state', gameState: startedGame });
@@ -171,7 +129,7 @@ router.ws('/game/:gameID', async (ws, req) => {
   });
   ws.on('close', () => {
     // TODO: handle closing here or something?
-    
+
   });
 });
 
