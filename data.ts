@@ -1,8 +1,8 @@
 import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
-import { ImageEntry, User } from "./types";
+import { PictureData, User } from "./types";
 
-const IMAGE_ENTRIES: Record<string, ImageEntry> = {
+const IMAGE_ENTRIES: Record<string, PictureData> = {
   794978: {
     id: "794978",
     likes: [],
@@ -45,31 +45,6 @@ export interface GameSearchParameters {
   filter?: {
     players?: string[];
   };
-}
-
-export interface ApiEntry {
-  id: number;
-  previewURL: string;
-  webformatURL: string;
-  views: number;
-  downloads: number;
-  user: string;
-  tags: string;
-  likes: string[];
-}
-export interface ApiResult {
-  total: number;
-  totalHits: number;
-  hits: ApiEntry[];
-}
-
-export function formatPixbay(data: any): ApiEntry[] {
-  var apiResult = data as ApiResult;
-  for (var idx in apiResult.hits) {
-    var id = String(apiResult.hits[idx].id);
-    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id]?.likes || [];
-  }
-  return apiResult.hits;
 }
 
 // returns n game results based on filter and sort parameters
@@ -120,13 +95,6 @@ export function getGameResults(gameIDs: string[]): GameResult[] | undefined {
     games.push(GAME_HISTORY[gameID]);
   }
   return games;
-}
-
-export function setImageLikes(id: string, username: string) {
-  if (!IMAGE_ENTRIES[id]) {
-    IMAGE_ENTRIES[id] = { id: id, likes: [] };
-  }
-  IMAGE_ENTRIES[id].likes = [...(IMAGE_ENTRIES[id]?.likes || []), username];
 }
 
 // TODO: add game states and types
