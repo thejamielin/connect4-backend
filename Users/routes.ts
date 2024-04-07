@@ -6,9 +6,8 @@ let currentUser = null;
 export default function UserRoutes(app: any) {
   // Checks if the given token exists and is associated with the given user
   async function isChill(token: string, username: string) {
-    const usernameIsSession = await sessionsDao.getSessionUsername(token)
     return (
-      usernameIsSession === username
+      (await sessionsDao.getSessionUsername(token)) === username
     );
   }
 
@@ -76,7 +75,7 @@ export default function UserRoutes(app: any) {
 
     // TODO: validate edited fields! e.g. followers must be valid users
     usersDao.setUserInfo(username, editedFields);
-    res.status(200).send(getPrivateUserInfo(username));
+    res.status(200).send(await getPrivateUserInfo(username));
   };
   const register = async (req: any, res: any) => {
   };
