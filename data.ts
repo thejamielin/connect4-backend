@@ -15,7 +15,7 @@ const USERS: Record<string, User> = {
     username: "theor",
     password: "password",
     email: "loser@gmail.com",
-    beginner: true,
+    isBeginner: true,
     following: ["jarm"],
     stats: {},
   },
@@ -23,7 +23,7 @@ const USERS: Record<string, User> = {
     username: "jarm",
     password: "secure",
     email: "winner@gmail.com",
-    beginner: true,
+    isBeginner: true,
     following: [],
     stats: {},
   },
@@ -31,10 +31,10 @@ const USERS: Record<string, User> = {
 
 const IMAGE_ENTRIES: Record<string, ImageEntry> = {
   794978: {
-    id: '794978',
+    id: "794978",
     likes: [],
-  }
-}
+  },
+};
 
 interface GameResult {
   id: string;
@@ -90,13 +90,13 @@ export interface ApiResult {
   hits: ApiEntry[];
 }
 
-export function formatPixbay(data : any) : ApiEntry[] {
-  var apiResult = data as ApiResult
-  for(var idx in apiResult.hits) {
-    var id = String(apiResult.hits[idx].id)
-    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id]?.likes || []
+export function formatPixbay(data: any): ApiEntry[] {
+  var apiResult = data as ApiResult;
+  for (var idx in apiResult.hits) {
+    var id = String(apiResult.hits[idx].id);
+    apiResult.hits[idx]["likes"] = IMAGE_ENTRIES[id]?.likes || [];
   }
-  return apiResult.hits
+  return apiResult.hits;
 }
 
 // returns n game results based on filter and sort parameters
@@ -149,11 +149,11 @@ export function getGameResults(gameIDs: string[]): GameResult[] | undefined {
   return games;
 }
 
-export function setImageLikes(id : string, username : string){
-  if(!IMAGE_ENTRIES[id]){
-    IMAGE_ENTRIES[id] = {id: id, likes: []}
+export function setImageLikes(id: string, username: string) {
+  if (!IMAGE_ENTRIES[id]) {
+    IMAGE_ENTRIES[id] = { id: id, likes: [] };
   }
-  IMAGE_ENTRIES[id].likes = [ ...(IMAGE_ENTRIES[id]?.likes || []), username]
+  IMAGE_ENTRIES[id].likes = [...(IMAGE_ENTRIES[id]?.likes || []), username];
 }
 
 // TODO: add game states and types

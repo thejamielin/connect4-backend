@@ -25,14 +25,7 @@ mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
 app.use(cors());
 
-// TODO: replace temporary testing code here
 app.use(express.json());
-
-interface AccountRegisterRequest {
-  username: string;
-  password: string;
-  email: string;
-}
 
 interface AccountLoginRequest {
   username: string;
@@ -46,25 +39,11 @@ interface AuthRequest {
 SessionRoutes(app);
 UserRoutes(app);
 
-app.post("/account/register", (req, res) => {
-  // { username: string, password: string, email: string } -> { token?: string }
-
-  // TODO: use request body validation checker
-  const { username, password, email } = req.body as AccountRegisterRequest;
-  // send failed response if user creation fails due to already existing
-  if (!usersDao.createNewUser(username, password, email)) {
-    res.status(400).send({});
-    return;
-  }
-  const sessionID = sessionsDao.createSession(username);
-  res.send({ token: sessionID });
-});
-
 app.post("/account/checkSession", async (req, res) => {
   // { token: string } -> {}
   // TODO: validate body
   const { token } = req.body;
-  const doesExist = await sessionsDao.doesSessionExist(token)
+  const doesExist = await sessionsDao.doesSessionExist(token);
   if (doesExist) {
     res.status(200).send({
       isValidSession: true,
@@ -103,33 +82,40 @@ app.post("/games/search", (req, res) => {
 });
 
 app.get("/pictures/search", (req, res) => {
-  const { q } = req.query
-  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, q: q}}).then((pixbayRes) => {
-    res.status(200).send(formatPixbay(pixbayRes.data))
-  })
-})
+  const { q } = req.query;
+  axios
+    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, q: q } })
+    .then((pixbayRes) => {
+      res.status(200).send(formatPixbay(pixbayRes.data));
+    });
+});
 
 app.get("/pictures/id", (req, res) => {
-  const { id } = req.query
-  axios.get(PIXBAY_URL, {params: {key: PIXBAY_API_KEY, id: id}}).then((pixbayRes) => {
-    res.status(200).send(formatPixbay(pixbayRes.data))
-  }).catch(() => {res.status(404).send("Image not found!")})
-})
+  const { id } = req.query;
+  axios
+    .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, id: id } })
+    .then((pixbayRes) => {
+      res.status(200).send(formatPixbay(pixbayRes.data));
+    })
+    .catch(() => {
+      res.status(404).send("Image not found!");
+    });
+});
 
 app.put("/pictures/like/:id", async (req, res) => {
   // TODO: validate body
-  const { token } = req.body
-  const { id } = req.params
-  const username = await getSessionUsername(token)
-  if(username === false){
-    res.status(404).send("Invalid session!")
-    return
+  const { token } = req.body;
+  const { id } = req.params;
+  const username = await getSessionUsername(token);
+  if (username === false) {
+    res.status(404).send("Invalid session!");
+    return;
   }
-  
+
   // TODO: validate edited fields! e.g. followers must be valid users
-  setImageLikes(id, username)
-  res.status(200).send()
-})
+  setImageLikes(id, username);
+  res.status(200).send();
+});
 
 app.get("/", (req, res) => {
   res.send("Welcome to Full Stack Development!");
