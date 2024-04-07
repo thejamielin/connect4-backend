@@ -1,10 +1,8 @@
 import * as sessionsDao from "../Sessions/dao";
+import { PIXBAY_API_KEY, PIXBAY_URL } from "../data";
 import { ApiEntry, ApiResult } from "../types";
 import * as dao from "./dao";
 import axios from "axios";
-
-const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
-const PIXBAY_URL = "https://pixabay.com/api/";
 
 export default function PictureRoutes(app: any) {
   async function formatPixbay(data: any): Promise<ApiEntry[]> {
@@ -18,7 +16,7 @@ export default function PictureRoutes(app: any) {
 
   // get a single APIEntry representing a picture based on its id
   const findPictureById = async (req: any, res: any) => {
-    const { id } = req.query;
+    const { id } = req.params;
     axios
       .get(PIXBAY_URL, { params: { key: PIXBAY_API_KEY, id: id } })
       .then(async (pixbayRes) => {
@@ -55,7 +53,7 @@ export default function PictureRoutes(app: any) {
     dao.addOneLike(id, username);
     res.status(200).send();
   };
-  app.get("/pictures/id", findPictureById);
+  app.get("/pictures/:id", findPictureById);
   app.get("/pictures/search", findPicturesByQuery);
   app.put("/pictures/like/:id", addLikeToPicture);
 }

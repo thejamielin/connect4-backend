@@ -1,6 +1,11 @@
 import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
 import { PictureData, User } from "./types";
+import dotenv from "dotenv";
+
+dotenv.config();
+export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
+export const PIXBAY_URL = "https://pixabay.com/api/";
 
 const IMAGE_ENTRIES: Record<string, PictureData> = {
   794978: {
@@ -8,6 +13,8 @@ const IMAGE_ENTRIES: Record<string, PictureData> = {
     likes: [],
   },
 };
+
+
 
 interface GameResult {
   id: string;

@@ -4,7 +4,6 @@ import SessionRoutes from "./Sessions/routes";
 import UserRoutes from "./Users/routes";
 import PictureRoutes from "./Pictures/routes";
 import cors from "cors";
-import dotenv from "dotenv";
 import {
   getGameResults,
   searchGameResults,
@@ -13,7 +12,7 @@ import {
 import axios from "axios";
 import { User } from "./types";
 import { getSessionUsername } from "./Sessions/dao";
-dotenv.config();
+
 
 const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
 const PIXBAY_URL = "https://pixabay.com/api/";
