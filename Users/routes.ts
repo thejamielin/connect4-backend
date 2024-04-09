@@ -46,8 +46,8 @@ export default function UserRoutes(app: any) {
     const { username, password, email, isBeginner } =
       req.body as AccountRegisterRequest;
     // send failed response if user creation fails due to already existing
-    if (!usersDao.createNewUser(username, password, email, isBeginner)) {
-      res.status(400).send({});
+    if (!(await usersDao.createNewUser(username, password, email, isBeginner))) {
+      res.status(409).send("User already exists");
       return;
     }
     const sessionID = sessionsDao.createSession(username);
