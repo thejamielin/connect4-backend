@@ -8,7 +8,7 @@ import cors from "cors";
 import { Connect4Board } from "./connect4";
 import { findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, createGame, leaveGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
-import { ConnectionStatusCode, ServerMessage, ClientRequest, Game } from "./gameData";
+import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData } from "./gameData";
 
 mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
@@ -20,17 +20,24 @@ expressWs(app);
 
 type GameClients = Map<string, Parameters<WebsocketRequestHandler>[0]>;
 const GAME_CLIENT_GROUPS: Map<string, GameClients> = new Map();
-function storeConnection(game: Game, playerID: string, connection: Parameters<WebsocketRequestHandler>[0]) {
+function storeConnection(game: GameData, userID: string, connection: Parameters<WebsocketRequestHandler>[0]) {
   let gameClients = GAME_CLIENT_GROUPS.get(game.id);
   if (!gameClients) {
     gameClients = new Map();
     GAME_CLIENT_GROUPS.set(game.id, gameClients);
   }
-  gameClients.get(playerID)?.close(ConnectionStatusCode.REDUNDANT_CONNECTION);
-  gameClients.set(playerID, connection);
+  gameClients.get(userID)?.close(ConnectionStatusCode.REDUNDANT_CONNECTION);
+  gameClients.set(userID, connection);
+  connection.on('close', () => {
+    const gameClients = GAME_CLIENT_GROUPS.get(game.id);
+    gameClients?.delete(userID);
+    if (gameClients?.size === 0) {
+      GAME_CLIENT_GROUPS.delete(game.id);
+    }
+  })
 }
 
-function broadcastGameMessage(game: Game, message: ServerMessage) {
+function broadcastGameMessage(game: GameData, message: ServerMessage) {
   const gameClients = GAME_CLIENT_GROUPS.get(game.id);
   if (!gameClients) {
     return;
@@ -48,17 +55,17 @@ router.ws('/game/:gameID', async (ws, req) => {
     ws.close(ConnectionStatusCode.NOT_AUTHORIZED, 'You must be logged in to play.');
     return;
   }
-  const playerID = await getSessionUsername(token + ''); // TODO: retrieve player ID from token
-  if (playerID === false) {
+  const userID = await getSessionUsername(token + ''); // TODO: retrieve player ID from token
+  if (userID === false) {
     console.error('Rejecting invalid player.');
     ws.close(ConnectionStatusCode.NOT_AUTHORIZED, 'You must be logged in to play.');
     return;
   }
 
-  function accessGame(): Game | undefined {
+  function accessGame(): GameData | undefined {
     const game = findGame(gameID);
     if (!game) {
-      console.error('Rejecting player', playerID, 'connecting to invalid game', gameID);
+      console.error('Rejecting player', userID, 'connecting to invalid game', gameID);
       ws.close(ConnectionStatusCode.NOT_FOUND, 'This game does not exist.');
       return undefined;
     }
@@ -75,33 +82,29 @@ router.ws('/game/:gameID', async (ws, req) => {
   //   ws.close(ConnectionStatusCode.REDUNDANT_CONNECTION, 'This player is already in the game.');
   //   return;
   // }
-  console.log('Player', playerID, 'joining', gameID, 'with players', JSON.stringify(game.playerIDs));
-  if (!joinGame(game, playerID)) {
-    console.error('Rejecting player', playerID, 'from full game', gameID);
+  console.log('Player', userID, 'joining', gameID, 'with players', JSON.stringify(game.connectedIDs));
+  if (!joinGame(game, userID)) {
+    console.error('Rejecting player', userID, 'from full game', gameID);
     ws.close(ConnectionStatusCode.GAME_FULL, 'Game is full.');
     return;
   }
   // store the established connection
-  storeConnection(game, playerID, ws);
+  storeConnection(game, userID, ws);
   ws.on('close', () => {
-    const gameClients = GAME_CLIENT_GROUPS.get(gameID);
-    gameClients?.delete(playerID);
-    if (gameClients?.size === 0) {
-      console.error('Last player', playerID, 'left, closing game', gameID);
-      GAME_CLIENT_GROUPS.delete(gameID);
-    }
     const game = accessGame();
-    if (game) {
-      leaveGame(game, playerID);
+    if (!game) {
+      return;
     }
+    leaveGame(game, userID);
+    broadcastGameMessage(game, { type: 'leave', playerID: userID });
   });
 
-  console.log('Player', playerID, 'joined game', gameID, 'with players', JSON.stringify(game.playerIDs));
+  console.log('Player', userID, 'joined game', gameID, 'with players', JSON.stringify(game.connectedIDs));
 
   const initialStateMessage: ServerMessage = { type: 'state', gameState: game };
   ws.send(JSON.stringify(initialStateMessage));
 
-  broadcastGameMessage(game, { type: 'join', playerID });
+  broadcastGameMessage(game, { type: 'join', playerID: userID });
   
   ws.on('message', data => {
     const game = accessGame();
@@ -113,23 +116,22 @@ router.ws('/game/:gameID', async (ws, req) => {
       if (game.phase !== 'creation') {
         return;
       }
-      if (game.readyPlayerIDs.find(id => id === playerID) !== undefined) {
+      if (game.readyIDs.find(id => id === userID) !== undefined) {
         return;
       }
-      const allReady = setReady(game, playerID);
-      broadcastGameMessage(game, { type: 'ready', playerID });
-      console.log('all ready? ', allReady)
+      const allReady = setReady(game, userID);
+      broadcastGameMessage(game, { type: 'ready', playerID: userID });
       if (allReady) {
         const startedGame = startGame(game);
         broadcastGameMessage(game, { type: 'state', gameState: startedGame });
       }
     } else if (message.type === 'move') {
-      if (validMove(game, playerID, message.column)) {
+      if (validMove(game, userID, message.column)) {
         applyMove(game, message.column);
-        broadcastGameMessage(game, { type: 'move', playerID, gameState: game });
+        broadcastGameMessage(game, { type: 'move', playerID: userID, gameState: game });
         const winningConnect = Connect4Board.findLastMoveWin(game.board);
         if (winningConnect) {
-          broadcastGameMessage(game, { type: 'gameover', result: { winnerID: playerID, line: winningConnect}});
+          broadcastGameMessage(game, { type: 'gameover', result: { winnerID: userID, line: winningConnect}});
         } else if (Connect4Board.checkBoardFull(game.board)) {
           broadcastGameMessage(game, { type: 'gameover', result: { winnerID: false }});
         }
@@ -141,7 +143,7 @@ router.ws('/game/:gameID', async (ws, req) => {
   });
   ws.on('close', () => {
     // TODO: handle closing here or something?
-    console.error('Closing socket for player', playerID);
+    console.error('Closing socket for player', userID);
   });
 });
 

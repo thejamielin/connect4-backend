@@ -2,7 +2,7 @@ export interface Connect4Board {
   connect: number;
   playerCount: number;
   playerTurn: number;
-  slots: (number | undefined)[][];
+  slots: (number | false)[][];
   lastMove?: Connect4Board.ExecutedMove;
 }
 
@@ -18,7 +18,7 @@ export namespace Connect4Board {
       connect: connect,
       playerCount: players,
       playerTurn: 0,
-      slots: Array(height).fill(undefined).map(() => Array(width).fill(undefined))
+      slots: Array(height).fill(0).map(() => Array(width).fill(false))
     }
   }
 
@@ -29,7 +29,7 @@ export namespace Connect4Board {
     }
     let landedRow = 0;
     for (let row = 0; row < board.slots.length; row += 1) {
-      if (board.slots[row][column] !== undefined) {
+      if (board.slots[row][column] !== false) {
         break;
       }
       landedRow = row;
@@ -44,7 +44,7 @@ export namespace Connect4Board {
     if (column < 0 || column >= board.slots[0].length) {
       return false;
     }
-    return board.slots[0][column] === undefined;
+    return board.slots[0][column] === false;
   }
 
   export function findLastMoveWin(board: Connect4Board): [number, number][] | undefined {
@@ -53,31 +53,31 @@ export namespace Connect4Board {
     }
     const directions = [[1, 0], [0, 1], [1, 1]];
     const [originCol, originRow] = [board.lastMove.column, board.lastMove.row];
-    const playerPiece = board.slots[originCol][originRow] as number;
-    directions.forEach(([colDir, rowDir]) => {
-      let inARow = [[originRow, originCol]];
+    const playerPiece = board.slots[originRow][originCol] as number;
+    for (let [colDir, rowDir] of directions) {
+      let inARow: [number, number][] = [[originRow, originCol]];
       [1, -1].forEach(sign => {
         let distance = 1;
-        const line = [];
+        const offShoot: [number, number][] = [];
         while (true) {
           const [col, row] = [originCol + colDir * sign * distance, originRow + rowDir * sign * distance];
           if (!inBounds(board, row, col) || board.slots[row][col] !== playerPiece) {
             break;
           }
           distance += 1;
-          line.push([row, col]);
+          offShoot.push([row, col]);
         }
-        inARow = sign === 1 ? [...inARow, ...line] : [...line.reverse(), ...inARow];
+        inARow = sign === 1 ? [...inARow, ...offShoot] : [...offShoot.reverse(), ...inARow];
       });
       if (inARow.length >= board.connect) {
         return inARow;
       }
-    });
+    }
     return undefined;
   }
 
   export function checkBoardFull(board: Connect4Board): boolean {
-    return board.slots.findIndex(row => row.findIndex(slot => slot === undefined) !== -1) === -1;
+    return board.slots.findIndex(row => row.findIndex(slot => slot === false) !== -1) === -1;
   }
 
   export function inBounds(board: Connect4Board, row: number, col: number): boolean {

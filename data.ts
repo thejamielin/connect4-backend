@@ -4,67 +4,71 @@ import { Connect4Board } from "./connect4";
 import { v4 as uuidv4 } from "uuid";
 import { PictureData } from "./types";
 import dotenv from "dotenv";
-import { Game, GameCreationData, OngoingGameData, GameResult } from "./gameData";
+import { GameData, GameCreationData, OngoingGameData, GameResult } from "./gameData";
 
 dotenv.config();
 export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
 export const PIXBAY_URL = "https://pixabay.com/api/";
 
-const GAMES: Map<string, Game> = new Map();
+const GAMES: Map<string, GameData> = new Map();
 
-export function findGame(gameID: string): Game | undefined {
+export function findGame(gameID: string): GameData | undefined {
   return GAMES.get(gameID);
 }
 
-export function joinGame(game: Game, playerID: string): boolean {
-  if (game.playerIDs.length >= 2) {
+export function joinGame(game: GameData, userID: string): boolean {
+  if (game.connectedIDs.length >= 2) {
     return false;
   }
-  game.playerIDs = [...game.playerIDs, playerID];
+  game.connectedIDs = [...game.connectedIDs, userID];
   return true;
 }
 
-export function leaveGame(game: Game, playerID: string): boolean {
-  if (game.playerIDs.find(id => id === playerID) === undefined) {
+export function leaveGame(game: GameData, userID: string): boolean {
+  if (game.connectedIDs.find(id => id === userID) === undefined) {
     return false;
   }
-  game.playerIDs = game.playerIDs.filter(id => id !== playerID);
+  game.connectedIDs = game.connectedIDs.filter(id => id !== userID);
+  if (game.phase === 'creation') {
+    game.readyIDs = game.readyIDs.filter(id => id !== userID);
+  }
   return true;
 }
 
 export function createGame(): string {
-  const game: Game = {
+  const game: GameData = {
     id: uuidv4(),
     phase: 'creation',
-    playerIDs: [],
-    readyPlayerIDs: []
+    connectedIDs: [],
+    readyIDs: []
   };
   GAMES.set(game.id, game);
   return game.id;
 }
 
 // returns a boolean indicating whether the game is ready to start or not
-export function setReady(game: GameCreationData, playerID: string) {
-  const matchID = (id: string) => id === playerID;
-  if (!game.playerIDs.find(matchID) || game.readyPlayerIDs.find(matchID)) {
+export function setReady(game: GameCreationData, userID: string) {
+  const matchID = (id: string) => id === userID;
+  if (!game.connectedIDs.find(matchID) || game.readyIDs.find(matchID)) {
     return false;
   }
-  game.readyPlayerIDs = [...game.readyPlayerIDs, playerID];
-  return game.playerIDs.length === game.readyPlayerIDs.length;
+  game.readyIDs = [...game.readyIDs, userID];
+  return 2 === game.readyIDs.length;
 }
 
 export function startGame(game: GameCreationData): OngoingGameData {
   const startedGame: OngoingGameData = {
     id: game.id,
     phase: 'ongoing',
-    playerIDs: game.playerIDs,
+    connectedIDs: game.connectedIDs,
+    playerIDs: game.readyIDs,
     board: Connect4Board.newBoard(4, 2, 7, 6)
   };
   GAMES.set(game.id, startedGame);
   return startedGame;
 }
 
-export function validMove(game: Game, playerID: string, column: number): game is OngoingGameData {
+export function validMove(game: GameData, playerID: string, column: number): game is OngoingGameData {
   // game must be ongoing
   if (game.phase !== 'ongoing') {
     return false;

@@ -2,17 +2,18 @@ import { Connect4Board } from "./connect4";
 
 export interface CommonGameData {
   id: string;
-  playerIDs: string[];
+  connectedIDs: string[];
 }
 
 export interface GameCreationData extends CommonGameData {
   phase: 'creation';
-  readyPlayerIDs: string[];
+  readyIDs: string[];
 }
 
 export interface OngoingGameData extends CommonGameData {
   phase: 'ongoing';
   board: Connect4Board;
+  playerIDs: string[];
 }
 
 export interface EndedGameData extends CommonGameData {
@@ -30,7 +31,7 @@ export interface GameResult {
   date: Date;
 }
 
-export type Game = GameCreationData | OngoingGameData | EndedGameData;
+export type GameData = GameCreationData | OngoingGameData | EndedGameData;
 
 export type ClientRequest = {
   type: 'ready';
@@ -44,7 +45,7 @@ export type ClientRequest = {
 
 export type ServerMessage = {
   type: 'state';
-  gameState: Game
+  gameState: GameData
 } | {
   type: 'join';
   playerID: string;
