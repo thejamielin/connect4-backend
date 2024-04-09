@@ -33,7 +33,6 @@ export function getSessionUsername(
   token: string
 ): Promise<string | false> {
   return sessionModel.findOne({ token: token }).then((session) => {
-    console.log(token, session)
     if (session === null) {
       return false;
     }

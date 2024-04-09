@@ -39,3 +39,32 @@ export async function createNewUser(
 export async function setUserInfo(username: string, newData: Partial<User>) {
   await userModel.updateOne({ username: username }, { $set: newData });
 }
+
+export async function getPublicUserInfo(username: string) {
+  const userInfo = await getUser(username);
+  if (!userInfo) {
+    throw Error("User does not exits");
+  }
+  return {
+    username: userInfo.username,
+    isBeginner: userInfo.isBeginner,
+    following: userInfo.following,
+    stats: userInfo.stats,
+    pfp: userInfo.pfp
+  };
+}
+
+export async function getPrivateUserInfo(username: string) {
+  const userInfo = await getUser(username);
+  if (!userInfo) {
+    throw Error("User does not exits");
+  }
+  return {
+    username: userInfo.username,
+    email: userInfo.email,
+    isBeginner: userInfo.isBeginner,
+    following: userInfo.following,
+    stats: userInfo.stats,
+    pfp: userInfo.pfp
+  };
+}

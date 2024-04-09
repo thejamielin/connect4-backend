@@ -15,10 +15,10 @@ export default function UserRoutes(app: any) {
     }
     const chill = await isChill(token, username);
     if (chill) {
-      const data = await getPrivateUserInfo(username);
+      const data = await usersDao.getPrivateUserInfo(username);
       res.status(200).send(data);
     } else {
-      const data = await getPublicUserInfo(username);
+      const data = await usersDao.getPublicUserInfo(username);
       res.status(200).send(data);
     }
   };
@@ -61,34 +61,5 @@ export default function UserRoutes(app: any) {
   // Checks if the given token exists and is associated with the given user
   async function isChill(token: string, username: string) {
     return (await sessionsDao.getSessionUsername(token)) === username;
-  }
-
-  async function getPublicUserInfo(username: string) {
-    const userInfo = await usersDao.getUser(username);
-    if (!userInfo) {
-      throw Error("User does not exits");
-    }
-    return {
-      username: userInfo.username,
-      isBeginner: userInfo.isBeginner,
-      following: userInfo.following,
-      stats: userInfo.stats,
-      pfp: userInfo.pfp
-    };
-  }
-
-  async function getPrivateUserInfo(username: string) {
-    const userInfo = await usersDao.getUser(username);
-    if (!userInfo) {
-      throw Error("User does not exits");
-    }
-    return {
-      username: userInfo.username,
-      email: userInfo.email,
-      isBeginner: userInfo.isBeginner,
-      following: userInfo.following,
-      stats: userInfo.stats,
-      pfp: userInfo.pfp
-    };
   }
 }
