@@ -69,6 +69,9 @@ export type ServerMessage = {
     playerID: string;
     text: string;
   }[];
+} | {
+  type: 'leave';
+  playerID: string;
 }
 
 // TODO: implement games closing if no activity for some time w/ creation timestamp

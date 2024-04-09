@@ -6,7 +6,7 @@ import UserRoutes from "./Users/routes";
 import PictureRoutes from "./Pictures/routes";
 import cors from "cors";
 import { Connect4Board } from "./connect4";
-import { findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, createGame } from "./data";
+import { findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, createGame, leaveGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
 import { ConnectionStatusCode, ServerMessage, ClientRequest, Game } from "./gameData";
 
@@ -28,13 +28,6 @@ function storeConnection(game: Game, playerID: string, connection: Parameters<We
   }
   gameClients.get(playerID)?.close(ConnectionStatusCode.REDUNDANT_CONNECTION);
   gameClients.set(playerID, connection);
-  connection.on('close', () => {
-    const gameClients = GAME_CLIENT_GROUPS.get(game.id);
-    gameClients?.delete(playerID);
-    if (gameClients?.size === 0) {
-      GAME_CLIENT_GROUPS.delete(game.id);
-    }
-  })
 }
 
 function broadcastGameMessage(game: Game, message: ServerMessage) {
@@ -48,24 +41,24 @@ function broadcastGameMessage(game: Game, message: ServerMessage) {
 const router = express.Router();
 
 router.ws('/game/:gameID', async (ws, req) => {
-  console.log('everytddy')
   const { gameID } = req.params;
   const { token } = req.query;
   if (token === undefined) {
+    console.error('Rejecting tokenless player.');
     ws.close(ConnectionStatusCode.NOT_AUTHORIZED, 'You must be logged in to play.');
     return;
   }
-  console.log('token')
   const playerID = await getSessionUsername(token + ''); // TODO: retrieve player ID from token
   if (playerID === false) {
+    console.error('Rejecting invalid player.');
     ws.close(ConnectionStatusCode.NOT_AUTHORIZED, 'You must be logged in to play.');
     return;
   }
-  console.log('ds dandy')
 
   function accessGame(): Game | undefined {
     const game = findGame(gameID);
     if (!game) {
+      console.error('Rejecting player', playerID, 'connecting to invalid game', gameID);
       ws.close(ConnectionStatusCode.NOT_FOUND, 'This game does not exist.');
       return undefined;
     }
@@ -77,20 +70,39 @@ router.ws('/game/:gameID', async (ws, req) => {
   if (!game) {
     return;
   }
+  // if (game.playerIDs.find(id => id === playerID) !== undefined) {
+  //   console.error('Rejecting player', playerID, 'who already joined', gameID);
+  //   ws.close(ConnectionStatusCode.REDUNDANT_CONNECTION, 'This player is already in the game.');
+  //   return;
+  // }
+  console.log('Player', playerID, 'joining', gameID, 'with players', JSON.stringify(game.playerIDs));
   if (!joinGame(game, playerID)) {
+    console.error('Rejecting player', playerID, 'from full game', gameID);
     ws.close(ConnectionStatusCode.GAME_FULL, 'Game is full.');
     return;
   }
   // store the established connection
   storeConnection(game, playerID, ws);
-  console.log('everything dandy')
+  ws.on('close', () => {
+    const gameClients = GAME_CLIENT_GROUPS.get(gameID);
+    gameClients?.delete(playerID);
+    if (gameClients?.size === 0) {
+      console.error('Last player', playerID, 'left, closing game', gameID);
+      GAME_CLIENT_GROUPS.delete(gameID);
+    }
+    const game = accessGame();
+    if (game) {
+      leaveGame(game, playerID);
+    }
+  });
+
+  console.log('Player', playerID, 'joined game', gameID, 'with players', JSON.stringify(game.playerIDs));
+
   const initialStateMessage: ServerMessage = { type: 'state', gameState: game };
-  ws.send(JSON.stringify(initialStateMessage))
-  console.log('send initial state')
+  ws.send(JSON.stringify(initialStateMessage));
 
   broadcastGameMessage(game, { type: 'join', playerID });
   
-  console.log('broad')
   ws.on('message', data => {
     const game = accessGame();
     if (!game) {
@@ -129,7 +141,7 @@ router.ws('/game/:gameID', async (ws, req) => {
   });
   ws.on('close', () => {
     // TODO: handle closing here or something?
-
+    console.error('Closing socket for player', playerID);
   });
 });
 
@@ -162,7 +174,7 @@ app.post("/game", async (req, res) => {
     res.status(401).send("You must be logged in to create a game.");
     return;
   }
-  res.status(200).send({ gameID: createGame(player) });
+  res.status(200).send({ gameID: createGame() });
 });
 
 app.get("/games", (req, res) => {

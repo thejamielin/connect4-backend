@@ -24,11 +24,19 @@ export function joinGame(game: Game, playerID: string): boolean {
   return true;
 }
 
-export function createGame(playerID: string): string {
+export function leaveGame(game: Game, playerID: string): boolean {
+  if (game.playerIDs.find(id => id === playerID) === undefined) {
+    return false;
+  }
+  game.playerIDs = game.playerIDs.filter(id => id !== playerID);
+  return true;
+}
+
+export function createGame(): string {
   const game: Game = {
     id: uuidv4(),
     phase: 'creation',
-    playerIDs: [playerID],
+    playerIDs: [],
     readyPlayerIDs: []
   };
   GAMES.set(game.id, game);
