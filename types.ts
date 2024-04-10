@@ -1,10 +1,21 @@
 // Backend data
-export interface User {
+
+export type User = RegularUser | BeginnerUser;
+
+export interface RegularUser {
   email: string;
-  isBeginner: boolean;
+  role: "regular";
   username: string;
   following: string[];
   stats: UserStats;
+  password: string;
+  pfp?: string;
+}
+
+export interface BeginnerUser {
+  email: string;
+  role: "beginner";
+  username: string;
   password: string;
   pfp?: string;
 }

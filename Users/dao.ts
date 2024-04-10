@@ -22,15 +22,25 @@ export async function createNewUser(
   if (userExists) {
     return false;
   }
+  var newUser: User;
 
-  const newUser: User = {
-    username: username,
-    password: password,
-    email: email,
-    following: [],
-    stats: {},
-    isBeginner: isBeginner,
-  };
+  if (isBeginner) {
+    newUser = {
+      username: username,
+      password: password,
+      email: email,
+      role: "beginner",
+    };
+  } else {
+    newUser = {
+      username: username,
+      password: password,
+      email: email,
+      following: [],
+      stats: {},
+      role: "regular",
+    };
+  }
 
   await userModel.create(newUser);
   return true;
@@ -45,13 +55,20 @@ export async function getPublicUserInfo(username: string) {
   if (!userInfo) {
     throw Error("User does not exits");
   }
-  return {
-    username: userInfo.username,
-    isBeginner: userInfo.isBeginner,
-    following: userInfo.following,
-    stats: userInfo.stats,
-    pfp: userInfo.pfp
-  };
+  if (userInfo.role === "beginner") {
+    return {
+      username: userInfo.username,
+      role: userInfo.role,
+    };
+  } else {
+    return {
+      username: userInfo.username,
+      following: userInfo.following,
+      stats: userInfo.stats,
+      pfp: userInfo.pfp,
+      role: userInfo.role,
+    };
+  }
 }
 
 export async function getPrivateUserInfo(username: string) {
@@ -59,12 +76,19 @@ export async function getPrivateUserInfo(username: string) {
   if (!userInfo) {
     throw Error("User does not exits");
   }
+  if (userInfo.role === "beginner") {
+    return {
+      username: userInfo.username,
+      role: userInfo.role,
+      email: userInfo.email,
+    };
+  }
   return {
     username: userInfo.username,
     email: userInfo.email,
-    isBeginner: userInfo.isBeginner,
     following: userInfo.following,
     stats: userInfo.stats,
-    pfp: userInfo.pfp
+    pfp: userInfo.pfp,
+    role: userInfo.role,
   };
 }

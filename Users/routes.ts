@@ -1,6 +1,7 @@
 import * as sessionsDao from "../Sessions/dao";
 import { AccountRegisterRequest, User } from "../types";
 import * as usersDao from "../Users/dao";
+import { RegularUser, BeginnerUser } from "../types";
 
 let currentUser = null;
 export default function UserRoutes(app: any) {
@@ -24,10 +25,11 @@ export default function UserRoutes(app: any) {
   };
   const updateUser = async (req: any, res: any) => {
     // TODO: validate body
-    const { token, editedFields } = req.body.body as 
-    {
+    const { token, editedFields } = req.body.body as {
       token: string;
-      editedFields: Partial<Pick<User, "email" | "pfp" | "following">>;
+      editedFields:
+        | Partial<Pick<RegularUser, "email" | "pfp" | "following">>
+        | Partial<Pick<BeginnerUser, "email" | "pfp">>;
     };
     const username = await sessionsDao.getSessionUsername(token);
     if (username === false) {
@@ -37,7 +39,7 @@ export default function UserRoutes(app: any) {
 
     // TODO: validate edited fields! e.g. followers must be valid users
     usersDao.setUserInfo(username, editedFields);
-    res.status(200).send({success: true});
+    res.status(200).send({ success: true });
   };
   const register = async (req: any, res: any) => {
     // { username: string, password: string, email: string } -> { token?: string }
@@ -46,7 +48,9 @@ export default function UserRoutes(app: any) {
     const { username, password, email, isBeginner } =
       req.body as AccountRegisterRequest;
     // send failed response if user creation fails due to already existing
-    if (!(await usersDao.createNewUser(username, password, email, isBeginner))) {
+    if (
+      !(await usersDao.createNewUser(username, password, email, isBeginner))
+    ) {
       res.status(409).send("User already exists");
       return;
     }
