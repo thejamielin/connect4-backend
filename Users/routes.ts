@@ -29,7 +29,7 @@ export default function UserRoutes(app: any) {
       token: string;
       editedFields:
         | Partial<Pick<RegularUser, "email" | "pfp" | "following">>
-        | Partial<Pick<BeginnerUser, "email" | "pfp">>;
+        | Partial<Pick<BeginnerUser, "email">>;
     };
     const username = await sessionsDao.getSessionUsername(token);
     if (username === false) {
