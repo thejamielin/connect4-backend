@@ -1,7 +1,7 @@
 import { WebsocketRequestHandler } from "express-ws";
 import { ConnectionStatusCode, GameData, ServerMessage } from "./gameTypes";
 
-type GameClient = Parameters<WebsocketRequestHandler>[0];
+export type GameClient = Parameters<WebsocketRequestHandler>[0];
 
 export default class ClientManager {
   clientGroups: Map<string, Map<string, GameClient>>;
