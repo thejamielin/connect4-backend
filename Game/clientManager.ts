@@ -3,7 +3,7 @@ import { ConnectionStatusCode, GameData, ServerMessage } from "./gameTypes";
 
 export type GameClient = Parameters<WebsocketRequestHandler>[0];
 
-export default class ClientManager {
+class ClientManager {
   clientGroups: Map<string, Map<string, GameClient>>;
   constructor() {
     this.clientGroups = new Map();
@@ -42,6 +42,9 @@ export default class ClientManager {
       if (gameClients.size === 0) {
         this.clientGroups.delete(gameID);
       }
-    })
+    });
   }
 }
+
+const CLIENT_MANAGER = new ClientManager();
+export default CLIENT_MANAGER;
