@@ -8,7 +8,8 @@ import cors from "cors";
 import { Connect4Board } from "./connect4";
 import { findGame, joinGame, setReady, getGameResults, GameSearchParameters, searchGameResults, startGame, validMove, applyMove, createGame, leaveGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
-import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData } from "./gameData";
+import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData } from "./gameTypes";
+import ClientManager from "./clientManager";
 
 mongoose.connect("mongodb://localhost:27017/connect4");
 const app = express();
@@ -18,32 +19,7 @@ app.use(express.json());
 expressWs(app);
 
 
-type GameClients = Map<string, Parameters<WebsocketRequestHandler>[0]>;
-const GAME_CLIENT_GROUPS: Map<string, GameClients> = new Map();
-function storeConnection(game: GameData, userID: string, connection: Parameters<WebsocketRequestHandler>[0]) {
-  let gameClients = GAME_CLIENT_GROUPS.get(game.id);
-  if (!gameClients) {
-    gameClients = new Map();
-    GAME_CLIENT_GROUPS.set(game.id, gameClients);
-  }
-  gameClients.get(userID)?.close(ConnectionStatusCode.REDUNDANT_CONNECTION);
-  gameClients.set(userID, connection);
-  connection.on('close', () => {
-    const gameClients = GAME_CLIENT_GROUPS.get(game.id);
-    gameClients?.delete(userID);
-    if (gameClients?.size === 0) {
-      GAME_CLIENT_GROUPS.delete(game.id);
-    }
-  })
-}
-
-function broadcastGameMessage(game: GameData, message: ServerMessage) {
-  const gameClients = GAME_CLIENT_GROUPS.get(game.id);
-  if (!gameClients) {
-    return;
-  }
-  gameClients.forEach(client => client.send(JSON.stringify(message)));
-}
+const CLIENT_MANAGER = new ClientManager();
 
 const router = express.Router();
 
@@ -89,14 +65,14 @@ router.ws('/game/:gameID', async (ws, req) => {
     return;
   }
   // store the established connection
-  storeConnection(game, userID, ws);
+  CLIENT_MANAGER.storeConnection(game, userID, ws);
   ws.on('close', () => {
     const game = accessGame();
     if (!game) {
       return;
     }
     leaveGame(game, userID);
-    broadcastGameMessage(game, { type: 'leave', playerID: userID });
+    CLIENT_MANAGER.broadcastGameMessage(game, { type: 'leave', playerID: userID });
   });
 
   console.log('Player', userID, 'joined game', gameID, 'with players', JSON.stringify(game.connectedIDs));
@@ -104,7 +80,7 @@ router.ws('/game/:gameID', async (ws, req) => {
   const initialStateMessage: ServerMessage = { type: 'state', gameState: game };
   ws.send(JSON.stringify(initialStateMessage));
 
-  broadcastGameMessage(game, { type: 'join', playerID: userID });
+  CLIENT_MANAGER.broadcastGameMessage(game, { type: 'join', playerID: userID });
   
   ws.on('message', data => {
     const game = accessGame();
@@ -120,20 +96,20 @@ router.ws('/game/:gameID', async (ws, req) => {
         return;
       }
       const allReady = setReady(game, userID);
-      broadcastGameMessage(game, { type: 'ready', playerID: userID });
+      CLIENT_MANAGER.broadcastGameMessage(game, { type: 'ready', playerID: userID });
       if (allReady) {
         const startedGame = startGame(game);
-        broadcastGameMessage(game, { type: 'state', gameState: startedGame });
+        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'state', gameState: startedGame });
       }
     } else if (message.type === 'move') {
       if (validMove(game, userID, message.column)) {
         applyMove(game, message.column);
-        broadcastGameMessage(game, { type: 'move', playerID: userID, gameState: game });
+        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'move', playerID: userID, gameState: game });
         const winningConnect = Connect4Board.findLastMoveWin(game.board);
         if (winningConnect) {
-          broadcastGameMessage(game, { type: 'gameover', result: { winnerID: userID, line: winningConnect}});
+          CLIENT_MANAGER.broadcastGameMessage(game, { type: 'gameover', result: { winnerID: userID, line: winningConnect}});
         } else if (Connect4Board.checkBoardFull(game.board)) {
-          broadcastGameMessage(game, { type: 'gameover', result: { winnerID: false }});
+          CLIENT_MANAGER.broadcastGameMessage(game, { type: 'gameover', result: { winnerID: false }});
         }
         // TODO: handle game cleanup and ending
       } else {
@@ -148,21 +124,6 @@ router.ws('/game/:gameID', async (ws, req) => {
 });
 
 app.use("/ws", router);
-
-interface AccountRegisterRequest {
-  username: string;
-  password: string;
-  email: string;
-}
-
-interface AccountLoginRequest {
-  username: string;
-  password: string;
-}
-
-interface AuthRequest {
-  token: string;
-}
 
 SessionRoutes(app);
 UserRoutes(app);

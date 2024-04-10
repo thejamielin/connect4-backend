@@ -4,7 +4,7 @@ import { Connect4Board } from "./connect4";
 import { v4 as uuidv4 } from "uuid";
 import { PictureData } from "./types";
 import dotenv from "dotenv";
-import { GameData, GameCreationData, OngoingGameData, GameResult } from "./gameData";
+import { GameData, GameCreationData, OngoingGameData, GameResult } from "./gameTypes";
 
 dotenv.config();
 export const PIXBAY_API_KEY = process.env.PIXBAY_API_KEY;
