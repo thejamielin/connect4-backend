@@ -38,6 +38,7 @@ export interface PictureStats {
 // interpretation of a single image Pixbay API response
 export interface PictureInfo {
   id: number;
+  pageURL: string;
   previewURL: string;
   webformatURL: string;
   views: number;
@@ -46,6 +47,7 @@ export interface PictureInfo {
   tags: string;
   likes: string[];
 }
+
 export interface ApiResult {
   total: number;
   totalHits: number;
