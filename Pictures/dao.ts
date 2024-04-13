@@ -30,3 +30,15 @@ export async function addOneLike(id: string, username: string): Promise<void> {
     .updateOne({ id: id }, { $push: { likes: username } })
     .then((res) => {});
 }
+
+// add a like to the given picture id list, if the picture does not exist, create it
+export async function removeLike(id: string, username: string): Promise<void> {
+  const pic = await getPicture(id);
+  if (pic === false) {
+    await pictureModel.create({ id: id, likes: [username] });
+    return;
+  }
+  return await pictureModel
+    .updateOne({ id: id }, { $pull: { likes: username } })
+    .then((res) => {});
+}

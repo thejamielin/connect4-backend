@@ -52,7 +52,26 @@ export default function PictureRoutes(app: any) {
     dao.addOneLike(id, username);
     res.status(200).send();
   };
+
+  // insert a like on a specified image into "pictures" collection for the requesting user
+  const unlikePicture = async (req: any, res: any) => {
+    // TODO: validate body
+    const { token } = req.body;
+    const { id } = req.params;
+    const username = await sessionsDao.getSessionUsername(token);
+    if (username === false) {
+      res.status(404).send("Invalid session!");
+      return;
+    }
+
+    // TODO: validate edited fields! e.g. followers must be valid users
+    dao.removeLike(id, username);
+    res.status(200).send();
+  };
+  
+
   app.get("/pictures/search", findPicturesByQuery);
   app.get("/pictures/:id", findPictureById);
   app.put("/pictures/like/:id", addLikeToPicture);
+  app.delete("/pictures/like/:id", unlikePicture);
 }
