@@ -56,8 +56,11 @@ export default function PictureRoutes(app: any) {
   // insert a like on a specified image into "pictures" collection for the requesting user
   const unlikePicture = async (req: any, res: any) => {
     // TODO: validate body
-    const { token } = req.body;
     const { id } = req.params;
+    if (!req.headers.authorization) {
+      return res.status(403).json({ error: 'No credentials sent!' });
+    }
+    const token = req.headers.authorization;
     const username = await sessionsDao.getSessionUsername(token);
     if (username === false) {
       res.status(404).send("Invalid session!");
