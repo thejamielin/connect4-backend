@@ -1,12 +1,12 @@
-import { PictureData } from "../types";
+import { PictureStats } from "../types";
 import { pictureModel } from "./model";
 
-export async function getPicture(id: string): Promise<PictureData | false> {
+export async function getPicture(id: string): Promise<PictureStats | false> {
   return await pictureModel.findOne({ id: id }).then((pic) => {
     if (pic === null) {
       return false;
     }
-    return pic as PictureData;
+    return pic as PictureStats;
   });
 }
 

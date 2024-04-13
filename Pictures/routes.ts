@@ -1,11 +1,11 @@
 import * as sessionsDao from "../Sessions/dao";
 import { PIXBAY_API_KEY, PIXBAY_URL } from "../data";
-import { ApiEntry, ApiResult } from "../types";
+import { PictureInfo, ApiResult } from "../types";
 import * as dao from "./dao";
 import axios from "axios";
 
 export default function PictureRoutes(app: any) {
-  async function formatPixbay(data: any): Promise<ApiEntry[]> {
+  async function formatPixbay(data: any): Promise<PictureInfo[]> {
     var apiResult = data as ApiResult;
     for (var idx in apiResult.hits) {
       var id = String(apiResult.hits[idx].id);
