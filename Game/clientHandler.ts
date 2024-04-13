@@ -3,6 +3,7 @@ import { Connect4Board } from "./connect4";
 import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame } from "../data";
 import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData, EndedGameData, GameResult } from "./gameTypes";
 import * as gameResultsDao from "../GameResults/dao";
+import * as userDao from "../Users/dao";
 
 export default class ClientHandler {
   gameID: string;
@@ -120,6 +121,23 @@ export default class ClientHandler {
           ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult
         } });
         gameResultsDao.saveGameResult(gameResult);
+        game.playerIDs.forEach(playerID => {
+          userDao.getUser(playerID).then(user => {
+            if (user?.role !== 'regular') {
+              return;
+            }
+            const newStats = user.stats;
+            newStats.gameIDs.push(game.id);
+            if (!gameResult) {
+              newStats.ties += 1;
+            } else if (gameResult.winnerID === playerID) {
+              newStats.wins += 1;
+            } else {
+              newStats.losses += 1;
+            }
+            userDao.setUserInfo(playerID, { stats: newStats })
+          });
+        });
       }
     } else {
       // TODO: handle misbehaving clients?

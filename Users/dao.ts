@@ -37,7 +37,12 @@ export async function createNewUser(
       password: password,
       email: email,
       following: [],
-      stats: {},
+      stats: {
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        gameIDs: []
+      },
       role: "regular",
     };
   }
@@ -74,7 +79,7 @@ export async function getPublicUserInfo(username: string) {
 export async function getPrivateUserInfo(username: string) {
   const userInfo = await getUser(username);
   if (!userInfo) {
-    throw Error("User does not exits");
+    throw Error("User does not exist");
   }
   if (userInfo.role === "beginner") {
     return {
