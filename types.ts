@@ -30,13 +30,13 @@ export interface AccountRegisterRequest {
   isBeginner: boolean;
 }
 
-export interface PictureData {
+export interface PictureStats {
   id: string;
   likes: string[]; // List of usernames
 }
 
 // interpretation of a single image Pixbay API response
-export interface ApiEntry {
+export interface PictureInfo {
   id: number;
   previewURL: string;
   webformatURL: string;
@@ -49,5 +49,5 @@ export interface ApiEntry {
 export interface ApiResult {
   total: number;
   totalHits: number;
-  hits: ApiEntry[];
+  hits: PictureInfo[];
 }

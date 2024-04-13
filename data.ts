@@ -2,7 +2,7 @@ import * as sessionsDao from "./Sessions/dao";
 import { error } from "console";
 import { Connect4Board } from "./Game/connect4";
 import { v4 as uuidv4 } from "uuid";
-import { PictureData } from "./types";
+import { PictureStats } from "./types";
 import dotenv from "dotenv";
 import { GameData, GameCreationData, OngoingGameData } from "./Game/gameTypes";
 
