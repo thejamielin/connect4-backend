@@ -1,7 +1,8 @@
 import CLIENT_MANAGER, { GameClient } from "./clientManager";
 import { Connect4Board } from "./connect4";
 import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame } from "../data";
-import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData } from "./gameTypes";
+import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData, EndedGameData, GameResult } from "./gameTypes";
+import * as gameResultsDao from "../GameResults/dao";
 
 export default class ClientHandler {
   gameID: string;
@@ -92,16 +93,34 @@ export default class ClientHandler {
     if (message.type !== 'move') {
       return;
     }
+    if (game.phase !== 'ongoing') {
+      return;
+    }
     if (validMove(game, this.userID, message.column)) {
       applyMove(game, message.column);
       CLIENT_MANAGER.broadcastGameMessage(game, { type: 'move', playerID: this.userID, gameState: game });
       const winningConnect = Connect4Board.findLastMoveWin(game.board);
+      const resultMetaData = {
+        id: game.id,
+        playerIDs: game.playerIDs,
+        date: new Date()
+      };
+      let gameResult: GameResult | false = false;
       if (winningConnect) {
-        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'gameover', result: { winnerID: this.userID, line: winningConnect}});
+        gameResult = {
+          ...resultMetaData, winnerID: this.userID, winningLine: winningConnect
+        };
       } else if (Connect4Board.checkBoardFull(game.board)) {
-        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'gameover', result: { winnerID: false }});
+        gameResult = {
+          ...resultMetaData, winnerID: false
+        };
       }
-      // TODO: handle game cleanup and ending
+      if (gameResult) {
+        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'state', gameState: {
+          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult
+        } });
+        gameResultsDao.saveGameResult(gameResult);
+      }
     } else {
       // TODO: handle misbehaving clients?
     }

@@ -46,7 +46,7 @@ export async function searchGameResults({
       return true;
     }
     for (let user of filter.players) {
-      if (gameResult.player1 !== user && gameResult.player2 !== user) {
+      if (!gameResult.playerIDs.find(id => id === user)) {
         return false;
       }
     }

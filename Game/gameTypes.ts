@@ -21,15 +21,18 @@ export interface EndedGameData extends CommonGameData {
   result: GameResult;
 }
 
-export interface GameResult {
+export type GameResult = {
   id: string;
-  player1: string;
-  player2: string;
-  // if winner is undefined, the game ended in a draw
-  winner?: string;
-  //moves: Move[];
+  playerIDs: string[];
   date: Date;
-}
+} & (
+  {
+    winnerID: false;
+  } | {
+    winnerID: string;
+    winningLine: [number, number][];
+  }
+);
 
 export type GameData = GameCreationData | OngoingGameData | EndedGameData;
 
@@ -56,15 +59,7 @@ export type ServerMessage = {
   type: 'move';
   playerID: string;
   gameState: OngoingGameData
-} | {
-  type: 'gameover';
-  result: {
-    winnerID: string;
-    line: [number, number][];
-  } | {
-    winnerID: false;
-  }
-} | {
+} |  {
   type: 'chat';
   messages: {
     playerID: string;
