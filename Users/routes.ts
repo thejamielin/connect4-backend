@@ -7,7 +7,10 @@ let currentUser = null;
 export default function UserRoutes(app: any) {
   const findUserByUsername = async (req: any, res: any) => {
     // TODO: validate body
-    const { token } = req.body;
+    if (!req.headers.authorization) {
+      return res.status(403).json({ error: 'No credentials sent!' });
+    }
+    const token = req.headers.authorization;
     const { username } = req.params;
     const doesUserExist = await usersDao.getUser(username);
     if (!doesUserExist) {
@@ -25,8 +28,11 @@ export default function UserRoutes(app: any) {
   };
   const updateUser = async (req: any, res: any) => {
     // TODO: validate body
-    const { token, editedFields } = req.body.body as {
-      token: string;
+    if (!req.headers.authorization) {
+      return res.status(403).json({ error: 'No credentials sent!' });
+    }
+    const token = req.headers.authorization;
+    const { editedFields } = req.body.body as {
       editedFields:
         | Partial<Pick<RegularUser, "email" | "pfp" | "following">>
         | Partial<Pick<BeginnerUser, "email">>;
@@ -57,7 +63,7 @@ export default function UserRoutes(app: any) {
     const sessionID = sessionsDao.createSession(username);
     res.send({ token: sessionID });
   };
-  app.post("/user/:username", findUserByUsername);
+  app.get("/user/:username", findUserByUsername);
   app.put("/user", updateUser);
   app.post("/account/register", register);
 
