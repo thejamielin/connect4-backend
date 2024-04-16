@@ -20,29 +20,20 @@ export default function SessionRoutes(app: any) {
   const logout = async (req: any, res: any) => {
     // { token: string } -> {}
     // TODO: validate body
-    const { token } = req.body;
+    if (!req.headers.authorization) {
+      return res.status(403).json({ error: 'No credentials sent!' });
+    }
+    const token = req.headers.authorization;
     dao.destroySession(token);
     res.send({});
-  };
-  const checkSession = async (req: any, res: any) => {
-    // { token: string } -> {}
-    // TODO: validate body
-    const { token } = req.body;
-    const doesExist = await dao.doesSessionExist(token);
-    if (doesExist) {
-      res.status(200).send({
-        isValidSession: true,
-      });
-    } else {
-      res.status(200).send({
-        isValidSession: false,
-      });
-    }
   };
 
   const getUserData = async (req: any, res: any) => {
     // { token: string } -> { username: string }
-    const { token } = req.body;
+    if (!req.headers.authorization) {
+      return res.status(403).json({ error: 'No credentials sent!' });
+    }
+    const token = req.headers.authorization;
     const username = await dao.getSessionUsername(token);
     if (username === false) {
       res.status(404).send("Invalid token");
@@ -55,7 +46,5 @@ export default function SessionRoutes(app: any) {
   
   app.post("/account/login", login);
   app.post("/account/logout", logout);
-  app.post("/account/checkSession", checkSession);
-  // TODO change to get
-  app.post("/account", getUserData);
+  app.get("/account", getUserData);
 }

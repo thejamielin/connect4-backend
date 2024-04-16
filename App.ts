@@ -25,7 +25,10 @@ GameResultRoutes(app);
 
 // create game
 app.post("/game", async (req, res) => {
-  const { token } = req.body;
+  if (!req.headers.authorization) {
+    return res.status(403).json({ error: 'No credentials sent!' });
+  }
+  const token = req.headers.authorization;
   const player = await getSessionUsername(token);
   if (player === false) {
     res.status(401).send("You must be logged in to create a game.");

@@ -1,5 +1,4 @@
 import { getUser } from "../Users/dao";
-import { User } from "../types";
 import { sessionModel } from "./model";
 import { v4 as uuidv4 } from "uuid";
 // creates a session and returns the newly generated session id
