@@ -9,8 +9,9 @@ import { createGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
 import GameRoutes from "./Game/routes";
 import GameResultRoutes from "./GameResults/routes";
-
-mongoose.connect("mongodb://localhost:27017/connect4");
+const CONNECTION_STRING =
+  process.env.DB_CONNECTION_STRING || "mongodb://0.0.0.0:27017/connect4";
+mongoose.connect(CONNECTION_STRING);
 const app = express();
 app.use(cors());
 
@@ -26,7 +27,7 @@ GameResultRoutes(app);
 // create game
 app.post("/game", async (req, res) => {
   if (!req.headers.authorization) {
-    return res.status(403).json({ error: 'No credentials sent!' });
+    return res.status(403).json({ error: "No credentials sent!" });
   }
   const token = req.headers.authorization;
   const player = await getSessionUsername(token);
