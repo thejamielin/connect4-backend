@@ -17,9 +17,6 @@ export function findGame(gameID: string): GameData | undefined {
 }
 
 export function joinGame(game: GameData, userID: string): boolean {
-  if (game.connectedIDs.length >= 2) {
-    return false;
-  }
   game.connectedIDs = [...game.connectedIDs, userID];
   return true;
 }
@@ -53,7 +50,7 @@ export function setReady(game: GameCreationData, userID: string) {
     return false;
   }
   game.readyIDs = [...game.readyIDs, userID];
-  return 2 === game.readyIDs.length;
+  return game.connectedIDs.length === game.readyIDs.length;
 }
 
 export function startGame(game: GameCreationData): OngoingGameData {
@@ -62,7 +59,7 @@ export function startGame(game: GameCreationData): OngoingGameData {
     phase: "ongoing",
     connectedIDs: game.connectedIDs,
     playerIDs: game.readyIDs,
-    board: Connect4Board.newBoard(4, 2, 7, 6),
+    board: Connect4Board.newBoard(4, game.readyIDs.length, 7, 6),
   };
   GAMES.set(game.id, startedGame);
   return startedGame;
