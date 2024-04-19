@@ -50,7 +50,7 @@ export function setReady(game: GameCreationData, userID: string) {
     return false;
   }
   game.readyIDs = [...game.readyIDs, userID];
-  return game.connectedIDs.length === game.readyIDs.length;
+  return game.readyIDs.length >= 2 && game.connectedIDs.length === game.readyIDs.length;
 }
 
 export function startGame(game: GameCreationData): OngoingGameData {
