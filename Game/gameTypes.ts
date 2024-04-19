@@ -19,6 +19,7 @@ export interface OngoingGameData extends CommonGameData {
 export interface EndedGameData extends CommonGameData {
   phase: 'over';
   result: GameResult;
+  rematchId: string;
 }
 
 export type GameResult = {

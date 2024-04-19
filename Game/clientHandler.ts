@@ -1,6 +1,6 @@
 import CLIENT_MANAGER, { GameClient } from "./clientManager";
 import { Connect4Board } from "./connect4";
-import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame } from "../data";
+import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame, createGame } from "../data";
 import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData, EndedGameData, GameResult } from "./gameTypes";
 import * as gameResultsDao from "../GameResults/dao";
 import * as userDao from "../Users/dao";
@@ -118,7 +118,7 @@ export default class ClientHandler {
       }
       if (gameResult) {
         CLIENT_MANAGER.broadcastGameMessage(game, { type: 'state', gameState: {
-          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult
+          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult, rematchId: createGame()
         } });
         gameResultsDao.saveGameResult(gameResult);
         game.playerIDs.forEach(playerID => {
