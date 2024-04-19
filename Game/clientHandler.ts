@@ -1,9 +1,10 @@
 import CLIENT_MANAGER, { GameClient } from "./clientManager";
 import { Connect4Board } from "./connect4";
-import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame, setGame, createGame } from "../data";
+import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame, createGame } from "../data";
 import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData, EndedGameData, GameResult } from "./gameTypes";
 import * as gameResultsDao from "../GameResults/dao";
 import * as userDao from "../Users/dao";
+import { createBotClient } from "./botClient";
 
 export default class ClientHandler {
   gameID: string;
@@ -67,13 +68,11 @@ export default class ClientHandler {
     if (!game) {
       return;
     }
-    const scheduledBroadcasts: ServerMessage[] = [];
-    this.handleReadyMessage(game, message, scheduledBroadcasts);
-    this.handleMoveMessage(game, message, scheduledBroadcasts);
-    scheduledBroadcasts.forEach(broadcast => CLIENT_MANAGER.broadcastGameMessage(game, broadcast));
+    this.handleReadyMessage(game, message);
+    this.handleMoveMessage(game, message);
   }
 
-  private handleReadyMessage(game: GameData, message: ClientRequest, scheduledBroadcasts: ServerMessage[]) {
+  private handleReadyMessage(game: GameData, message: ClientRequest) {
     if (message.type !== 'ready') {
       return;
     }
@@ -85,14 +84,14 @@ export default class ClientHandler {
       return;
     }
     const allReady = setReady(game, this.userID);
-    scheduledBroadcasts.push({ type: 'ready', playerID: this.userID });
+    CLIENT_MANAGER.broadcastGameMessage(game, { type: 'ready', playerID: this.userID });
     if (allReady) {
       const startedGame = startGame(game);
-      scheduledBroadcasts.push({ type: 'state', gameState: startedGame });
+      CLIENT_MANAGER.broadcastGameMessage(game, { type: 'state', gameState: startedGame });
     }
   }
 
-  private handleMoveMessage(game: GameData, message: ClientRequest, scheduledBroadcasts: ServerMessage[]) {
+  private handleMoveMessage(game: GameData, message: ClientRequest) {
     if (message.type !== 'move') {
       return;
     }
@@ -101,7 +100,7 @@ export default class ClientHandler {
     }
     if (validMove(game, this.userID, message.column)) {
       applyMove(game, message.column);
-      scheduledBroadcasts.push({ type: 'move', playerID: this.userID, gameState: game });
+      CLIENT_MANAGER.broadcastGameMessage(game, { type: 'move', playerID: this.userID, gameState: game });
       const winningConnect = Connect4Board.findLastMoveWin(game.board);
       const resultMetaData = {
         id: game.id,
@@ -119,11 +118,13 @@ export default class ClientHandler {
         };
       }
       if (gameResult) {
-        const endState: GameData = {
-          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult, rematchId: createGame()
-        };
-        setGame(endState);
-        scheduledBroadcasts.push({ type: 'state', gameState: endState });
+        const newGame = createGame()
+        CLIENT_MANAGER.broadcastGameMessage(game, { type: 'state', gameState: {
+          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult, rematchId: newGame
+        } });
+        if(game.playerIDs.includes("bot")) {
+          createBotClient(newGame)
+        }
         gameResultsDao.saveGameResult(gameResult);
         game.playerIDs.forEach(playerID => {
           userDao.getUser(playerID).then(user => {
