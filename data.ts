@@ -68,6 +68,10 @@ export function startGame(game: GameCreationData): OngoingGameData {
   return startedGame;
 }
 
+export function setGame(game: GameData) {
+  GAMES.set(game.id, game);
+}
+
 export function validMove(
   game: GameData,
   playerID: string,

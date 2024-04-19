@@ -29,8 +29,6 @@ GameResultRoutes(app);
 // create the 'bot' user
 createBotUser();
 
-const botConnections: WebSocket[] = [];
-
 // create game
 app.post("/game", async (req, res) => {
   if (!req.headers.authorization) {
@@ -44,10 +42,11 @@ app.post("/game", async (req, res) => {
     return;
   }
   const gameID = createGame();
-  res.status(200).send({ gameID: gameID });
   if (againstBot === 'true') {
+  console.log('creaintg client');
     createBotClient(gameID);
   }
+  res.status(200).send({ gameID: gameID });
 });
 
 app.get("/", (req, res) => {

@@ -1,8 +1,9 @@
 import { createSession, destroySession } from "../Sessions/dao";
 import { Connect4Board } from "./connect4";
 import { ClientRequest, GameData, ServerMessage } from "./gameTypes";
+import WebSocket from "ws";
 
-const SERVER_SOCKET_BASE_URL = "ws://localhost:4000/ws";
+const SERVER_SOCKET_BASE_URL = "ws://localhost:4000/ws/game";
 const BOT_NAME = 'bot';
 const botClients: Set<WebSocket> = new Set();
 
@@ -10,17 +11,21 @@ export function createBotClient(gameID: string) {
   const token = createSession(BOT_NAME);
   const client = new WebSocket(`${SERVER_SOCKET_BASE_URL}/${gameID}?token=${token}`);
   botClients.add(client);
-  
+
   let state: GameData | false = false;
-  client.onopen = () => {
-    
-  };
-  client.onclose = () => {
+  client.on('open', () => {
+    console.log('Bot joined the game.')
+  });
+  client.on('close', e => {
+    console.log('Bot connection closed')
     destroySession(token);
     botClients.delete(client);
-  }
-  client.onmessage = serverMessage => {
-    const message: ServerMessage = JSON.parse(serverMessage.data);
+  });
+  client.on('error', error => {
+    console.error('Bot error:', error);
+  });
+  client.on('message', serverMessage => {
+    const message: ServerMessage = JSON.parse(serverMessage.toString());
     if (message.type === 'join') {
       const chatRequest: ClientRequest = {
         type: 'chat',
@@ -55,7 +60,7 @@ export function createBotClient(gameID: string) {
           type: 'move',
           column: possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
         };
-        client.send(JSON.stringify(moveRequest));
+        setTimeout(() => client.send(JSON.stringify(moveRequest)), 2000);
       }
     } else if (message.type === 'chat') {
       if (message.messages[message.messages.length - 1].text === 'fuck u') {
@@ -63,5 +68,5 @@ export function createBotClient(gameID: string) {
         client.send(JSON.stringify(chatRequest));
       }
     }
-  }
+  });
 }
