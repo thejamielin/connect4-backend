@@ -1,6 +1,6 @@
 import CLIENT_MANAGER, { GameClient } from "./clientManager";
 import { Connect4Board } from "./connect4";
-import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame, setGame } from "../data";
+import { joinGame, leaveGame, setReady, startGame, validMove, applyMove, findGame, setGame, createGame } from "../data";
 import { ConnectionStatusCode, ServerMessage, ClientRequest, GameData, EndedGameData, GameResult } from "./gameTypes";
 import * as gameResultsDao from "../GameResults/dao";
 import * as userDao from "../Users/dao";
@@ -120,7 +120,7 @@ export default class ClientHandler {
       }
       if (gameResult) {
         const endState: GameData = {
-          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult
+          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult, rematchId: createGame()
         };
         setGame(endState);
         scheduledBroadcasts.push({ type: 'state', gameState: endState });
