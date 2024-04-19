@@ -4,16 +4,20 @@ import { ClientRequest, GameData, ServerMessage } from "./gameTypes";
 
 const SERVER_SOCKET_BASE_URL = "ws://localhost:4000/ws";
 const BOT_NAME = 'bot';
+const botClients: Set<WebSocket> = new Set();
 
-function createBotClient(gameID: string) {
+export function createBotClient(gameID: string) {
   const token = createSession(BOT_NAME);
   const client = new WebSocket(`${SERVER_SOCKET_BASE_URL}/${gameID}?token=${token}`);
+  botClients.add(client);
+  
   let state: GameData | false = false;
   client.onopen = () => {
-
+    
   };
   client.onclose = () => {
     destroySession(token);
+    botClients.delete(client);
   }
   client.onmessage = serverMessage => {
     const message: ServerMessage = JSON.parse(serverMessage.data);
