@@ -3,7 +3,7 @@ import { Connect4Board } from "./connect4";
 import { ClientRequest, GameData, ServerMessage } from "./gameTypes";
 import WebSocket from "ws";
 
-const SERVER_SOCKET_BASE_URL = "ws://localhost:4000/ws/game";
+const SERVER_SOCKET_BASE_URL = process.env.SERVER_SOCKET_BASE_URL;
 const BOT_NAME = "bot";
 const botClients: Set<WebSocket> = new Set();
 
