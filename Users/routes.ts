@@ -3,7 +3,6 @@ import { AccountRegisterRequest, User } from "../types";
 import * as usersDao from "../Users/dao";
 import { RegularUser, BeginnerUser } from "../types";
 
-let currentUser = null;
 export default function UserRoutes(app: any) {
   const findUserByUsername = async (req: any, res: any) => {
     // TODO: validate body

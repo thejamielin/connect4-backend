@@ -9,6 +9,7 @@ import { createGame } from "./data";
 import { getSessionUsername } from "./Sessions/dao";
 import GameRoutes from "./Game/routes";
 import GameResultRoutes from "./GameResults/routes";
+import { createBotUser } from "./Users/dao";
 const CONNECTION_STRING =
   process.env.DB_CONNECTION_STRING || "mongodb://0.0.0.0:27017/connect4";
 mongoose.connect(CONNECTION_STRING);
@@ -23,6 +24,9 @@ UserRoutes(app);
 PictureRoutes(app);
 GameRoutes(app);
 GameResultRoutes(app);
+
+// create the 'bot' user
+createBotUser();
 
 // create game
 app.post("/game", async (req, res) => {

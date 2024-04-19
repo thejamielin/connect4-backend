@@ -1,6 +1,12 @@
 import { User } from "../types";
 import { userModel } from "./model";
 
+export async function createBotUser(){
+  if (await createNewUser('bot', 'bot', 'bot', false)) {
+    console.log('Created bot user.');
+  }
+}
+
 export async function getUser(username: string): Promise<User | undefined> {
   return await userModel.findOne({ username: username }).then((user) => {
     if (user === null) {
