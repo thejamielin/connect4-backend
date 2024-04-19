@@ -43,7 +43,6 @@ app.post("/game", async (req, res) => {
   }
   const gameID = createGame();
   if (againstBot === 'true') {
-  console.log('creaintg client');
     createBotClient(gameID);
   }
   res.status(200).send({ gameID: gameID });
