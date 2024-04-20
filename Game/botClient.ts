@@ -67,7 +67,7 @@ export function createBotClient(gameID: string) {
           column:
             possibleMoves[Math.floor(Math.random() * possibleMoves.length)],
         };
-        setTimeout(() => client.send(JSON.stringify(moveRequest)), 2000);
+        setTimeout(() => client.send(JSON.stringify(moveRequest)), 1000);
       }
     } else if (message.type === "chat") {
       if (message.messages[message.messages.length - 1].text === "fuck u") {
