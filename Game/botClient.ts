@@ -70,7 +70,8 @@ export function createBotClient(gameID: string) {
         setTimeout(() => client.send(JSON.stringify(moveRequest)), 1000);
       }
     } else if (message.type === "chat") {
-      if (message.messages[message.messages.length - 1].text === "fuck u") {
+      const lastMessage = message.messages[message.messages.length - 1];
+      if (lastMessage.playerID !== BOT_NAME && lastMessage.text === "fuck u") {
         const chatRequest: ClientRequest = { type: "chat", message: "fuck u" };
         client.send(JSON.stringify(chatRequest));
       }
