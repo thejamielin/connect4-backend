@@ -69,9 +69,17 @@ export default class ClientHandler {
       return;
     }
     const scheduledBroadcasts: ServerMessage[] = [];
+    this.handleChatMessage(message, scheduledBroadcasts);
     this.handleReadyMessage(game, message, scheduledBroadcasts);
     this.handleMoveMessage(game, message, scheduledBroadcasts);
     scheduledBroadcasts.forEach(broadcast => CLIENT_MANAGER.broadcastGameMessage(game, broadcast));
+  }
+
+  private handleChatMessage(message: ClientRequest, scheduledBroadcasts: ServerMessage[]) {
+    if (message.type !== 'chat') {
+      return;
+    }
+    scheduledBroadcasts.push({ type: 'chat', messages: [{ playerID: this.userID, text: message.message }] });
   }
 
   private handleReadyMessage(game: GameData, message: ClientRequest, scheduledBroadcasts: ServerMessage[]) {
