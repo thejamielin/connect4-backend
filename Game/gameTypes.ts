@@ -20,6 +20,7 @@ export interface EndedGameData extends CommonGameData {
   phase: 'over';
   result: GameResult;
   rematchId: string;
+  finalBoard: Connect4Board;
 }
 
 export type GameResult = {

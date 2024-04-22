@@ -130,7 +130,12 @@ export default class ClientHandler {
       if (gameResult) {
         const newGame = createGame();
         const endedGame: GameData = {
-          ...resultMetaData, phase: 'over', connectedIDs: game.connectedIDs, result: gameResult, rematchId: newGame
+          ...resultMetaData,
+          phase: 'over',
+          connectedIDs: game.connectedIDs,
+          result: gameResult,
+          rematchId: newGame,
+          finalBoard: game.board
         };
         setGame(endedGame);
         scheduledBroadcasts.push({ type: 'state', gameState: endedGame });
